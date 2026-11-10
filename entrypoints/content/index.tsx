@@ -18,6 +18,39 @@ const DEFAULT_RULES: LatencyRule[] = [
   },
 ];
 
+/**
+ * Checks whether the extension context is still alive.
+ * In Chrome, reloading the extension in chrome://extensions invalidates existing tabs
+ * until the page is refreshed.
+ */
+function isExtensionValid(): boolean {
+  try {
+    return Boolean(typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+  } catch {
+    return false;
+  }
+}
+
+function safeSendMessage(message: any): Promise<any> {
+  if (!isExtensionValid()) {
+    return Promise.resolve();
+  }
+  try {
+    return chrome.runtime.sendMessage(message).catch(() => {});
+  } catch {
+    return Promise.resolve();
+  }
+}
+
+function safeStorageSet(items: Record<string, any>): void {
+  if (!isExtensionValid()) return;
+  try {
+    chrome.storage.local.set(items);
+  } catch {
+    // Context invalidated, ignore safely
+  }
+}
+
 export default defineContentScript({
   matches: ['<all_urls>'],
   cssInjectionMode: 'ui',
@@ -47,6 +80,7 @@ export default defineContentScript({
 });
 
 function injectPageScript() {
+  if (!isExtensionValid()) return;
   try {
     const script = document.createElement('script');
     script.src = chrome.runtime.getURL('injected.js');
@@ -54,7 +88,7 @@ function injectPageScript() {
     script.onload = () => script.remove();
     (document.head || document.documentElement).appendChild(script);
   } catch (err) {
-    console.error('[Dev Mock & APITrace] Failed to inject page script:', err);
+    // Extension might be reloading
   }
 }
 
@@ -64,33 +98,43 @@ const ContentApp: React.FC = () => {
   const [rules, setRules] = useState<LatencyRule[]>(DEFAULT_RULES);
   const [isRecording, setIsRecording] = useState(true);
 
-  // Load persisted latency rules from Chrome storage
+  // Load persisted latency rules from Chrome storage safely
   useEffect(() => {
-    chrome.storage.local.get(['chaos_latency_rules', 'chaos_panel_open'], (res) => {
-      if (res.chaos_latency_rules && Array.isArray(res.chaos_latency_rules)) {
-        setRules(res.chaos_latency_rules);
-        broadcastConfig(res.chaos_latency_rules, isRecording);
-      }
-      if (typeof res.chaos_panel_open === 'boolean') {
-        setIsOpen(res.chaos_panel_open);
-      }
-    });
+    if (!isExtensionValid()) return;
+    try {
+      chrome.storage.local.get(['chaos_latency_rules', 'chaos_panel_open'], (res) => {
+        if (!isExtensionValid()) return;
+        if (res?.chaos_latency_rules && Array.isArray(res.chaos_latency_rules)) {
+          setRules(res.chaos_latency_rules);
+          broadcastConfig(res.chaos_latency_rules, isRecording);
+        }
+        if (typeof res?.chaos_panel_open === 'boolean') {
+          setIsOpen(res.chaos_panel_open);
+        }
+      });
+    } catch {
+      // Ignore context invalidation
+    }
   }, []);
 
   const broadcastConfig = (currentRules: LatencyRule[], recording: boolean) => {
-    window.dispatchEvent(
-      new CustomEvent('__DEV_CHAOS_CONFIG_EVENT__', {
-        detail: {
-          rules: currentRules,
-          monitoringEnabled: recording,
-        },
-      })
-    );
+    try {
+      window.dispatchEvent(
+        new CustomEvent('__DEV_CHAOS_CONFIG_EVENT__', {
+          detail: {
+            rules: currentRules,
+            monitoringEnabled: recording,
+          },
+        })
+      );
+    } catch {
+      // Ignore
+    }
   };
 
   const handleUpdateRules = (updatedRules: LatencyRule[]) => {
     setRules(updatedRules);
-    chrome.storage.local.set({ chaos_latency_rules: updatedRules });
+    safeStorageSet({ chaos_latency_rules: updatedRules });
     broadcastConfig(updatedRules, isRecording);
   };
 
@@ -102,13 +146,13 @@ const ContentApp: React.FC = () => {
 
   const handleClearRequests = () => {
     setRequests([]);
-    chrome.runtime.sendMessage({ type: 'CLEAR_REQUESTS' }).catch(() => {});
+    safeSendMessage({ type: 'CLEAR_REQUESTS' });
   };
 
   const handleToggleOpen = () => {
     const next = !isOpen;
     setIsOpen(next);
-    chrome.storage.local.set({ chaos_panel_open: next });
+    safeStorageSet({ chaos_panel_open: next });
   };
 
   // Listen to intercepted API traffic from injected script
@@ -124,8 +168,8 @@ const ContentApp: React.FC = () => {
         return next;
       });
 
-      // Update background badge
-      chrome.runtime.sendMessage({ type: 'REQUEST_CAPTURED', request: requestData }).catch(() => {});
+      // Update background badge safely
+      safeSendMessage({ type: 'REQUEST_CAPTURED', request: requestData });
     };
 
     window.addEventListener('__DEV_CHAOS_API_TRACE__', handleTraceEvent);
@@ -136,7 +180,11 @@ const ContentApp: React.FC = () => {
 
   // Listen for messages from popup
   useEffect(() => {
+    if (!isExtensionValid()) return;
+
     const messageListener = (msg: any, _sender: any, sendResponse: (res?: any) => void) => {
+      if (!isExtensionValid()) return false;
+
       if (msg.type === 'TOGGLE_PANEL') {
         handleToggleOpen();
         sendResponse({ success: true, isOpen: !isOpen });
@@ -145,7 +193,7 @@ const ContentApp: React.FC = () => {
 
       if (msg.type === 'OPEN_PANEL') {
         setIsOpen(true);
-        chrome.storage.local.set({ chaos_panel_open: true });
+        safeStorageSet({ chaos_panel_open: true });
         sendResponse({ success: true });
         return true;
       }
@@ -179,10 +227,20 @@ const ContentApp: React.FC = () => {
       }
     };
 
-    chrome.runtime.onMessage.addListener(messageListener);
-    return () => {
-      chrome.runtime.onMessage.removeListener(messageListener);
-    };
+    try {
+      chrome.runtime.onMessage.addListener(messageListener);
+      return () => {
+        try {
+          if (isExtensionValid()) {
+            chrome.runtime.onMessage.removeListener(messageListener);
+          }
+        } catch {
+          // Ignore
+        }
+      };
+    } catch {
+      // Ignore
+    }
   }, [isOpen, requests.length, rules]);
 
   // Replay request
@@ -214,4 +272,3 @@ const ContentApp: React.FC = () => {
     </div>
   );
 };
-

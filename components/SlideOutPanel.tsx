@@ -28,6 +28,14 @@ interface SlideOutPanelProps {
   onToggleOpen: () => void;
 }
 
+function isExtensionValid(): boolean {
+  try {
+    return Boolean(typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+  } catch {
+    return false;
+  }
+}
+
 export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
   requests,
   isRecording,
@@ -125,7 +133,15 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
+              {!isExtensionValid() && (
+                <span
+                  className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-app-warning-muted text-app-warning border border-app-warning/40"
+                  title="Extension was reloaded in developer mode. Refresh this tab (F5) to re-sync."
+                >
+                  ⚠️ Refresh Tab (F5)
+                </span>
+              )}
               <button
                 onClick={() => setIsFullWidth(!isFullWidth)}
                 className="p-1.5 rounded text-app-muted hover:text-app-text hover:bg-app-elevated transition-colors"
