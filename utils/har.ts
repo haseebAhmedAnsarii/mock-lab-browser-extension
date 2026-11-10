@@ -137,3 +137,4 @@ export function requestsToHar(requests: CapturedRequest[]): HarLog {
     },
   };
 }
+

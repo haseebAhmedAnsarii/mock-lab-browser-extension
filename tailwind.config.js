@@ -9,29 +9,31 @@ export default {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
+        app: {
+          bg: '#09090b',              // Deep matte neutral zinc
+          surface: '#18181b',         // Card & drawer surface
+          elevated: '#27272a',        // Elevated panel & hover state
+          border: '#27272a',          // Crisp hairline border
+          'border-focus': '#3f3f46',  // Active / focused border
+          text: '#fafafa',            // High-contrast primary text
+          muted: '#a1a1aa',           // Secondary label text
+          faint: '#71717a',           // Microcopy & placeholders
+          primary: '#5e6ad2',         // Solid Linear indigo
+          'primary-hover': '#4f5ac4',
+          accent: '#3b82f6',          // Clean solid blue
+          danger: '#f43f5e',          // Solid flat rose
+          'danger-muted': '#2e1017',
+          warning: '#f59e0b',         // Solid flat amber
+          'warning-muted': '#2b1807',
+          success: '#10b981',         // Solid flat emerald
+          'success-muted': '#0a2417',
         },
-        chaos: {
-          500: '#f43f5e',
-          600: '#e11d48',
-        }
       },
       fontFamily: {
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
-      }
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif'],
+      },
     },
   },
   plugins: [],
 };
-

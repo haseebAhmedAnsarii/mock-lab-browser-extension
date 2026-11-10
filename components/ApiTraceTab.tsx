@@ -6,16 +6,12 @@ import {
   Pause,
   Play,
   Clock,
-  Filter,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  ArrowUpDown,
   Zap,
 } from 'lucide-react';
 import { CapturedRequest } from '../utils/types';
 import { RequestDetailDrawer } from './RequestDetailDrawer';
 import { exportRequestsAsJson, downloadFile } from '../utils/curl';
+import { requestsToHar } from '../utils/har';
 
 interface ApiTraceTabProps {
   requests: CapturedRequest[];
@@ -91,7 +87,7 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
 
   const selectedRequest = requests.find((r) => r.id === selectedRequestId);
 
-  const handleExport = () => {
+  const handleExportJson = () => {
     if (requests.length === 0) return;
     const jsonStr = exportRequestsAsJson(requests);
     const filename = `apitrace-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
@@ -99,27 +95,36 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
     onNotify?.(`Exported ${requests.length} requests as JSON`);
   };
 
+  const handleExportHar = () => {
+    if (requests.length === 0) return;
+    const harData = requestsToHar(requests);
+    const harStr = JSON.stringify(harData, null, 2);
+    const filename = `apitrace-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.har`;
+    downloadFile(harStr, filename, 'application/json');
+    onNotify?.(`Exported ${requests.length} requests as HAR 1.2`);
+  };
+
   const methods = ['ALL', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-slate-950 text-slate-200">
-      {/* Top Toolbar */}
-      <div className="p-3 bg-slate-900 border-b border-slate-800 space-y-2.5">
+    <div className="flex flex-col h-full overflow-hidden bg-app-bg text-app-text">
+      {/* Top Toolbar (Solid Flat) */}
+      <div className="p-3 bg-app-surface border-b border-app-border space-y-2.5">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           {/* Search bar */}
           <div className="relative flex-1 min-w-[180px]">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-app-muted" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter by URL, method, status, response..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text placeholder-app-faint focus:outline-none focus:border-app-border-focus font-mono"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 text-xs"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-app-muted hover:text-app-text text-xs"
               >
                 &times;
               </button>
@@ -130,10 +135,10 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
           <div className="flex items-center gap-1.5">
             <button
               onClick={onToggleRecording}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-semibold transition-colors border ${
                 isRecording
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 hover:bg-rose-500/30'
-                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30'
+                  ? 'bg-app-danger-muted text-app-danger border-app-danger/40 hover:bg-app-danger/20'
+                  : 'bg-app-success-muted text-app-success border-app-success/40 hover:bg-app-success/20'
               }`}
               title={isRecording ? 'Pause network recording' : 'Resume network recording'}
             >
@@ -144,20 +149,29 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
             <button
               onClick={onClearRequests}
               disabled={requests.length === 0}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 hover:text-rose-400 transition-colors"
+              className="p-1.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border disabled:opacity-40 text-app-muted hover:text-app-danger transition-colors"
               title="Clear all recorded requests"
             >
               <Trash2 className="w-4 h-4" />
             </button>
 
             <button
-              onClick={handleExport}
+              onClick={handleExportHar}
               disabled={requests.length === 0}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 hover:text-white transition-colors text-xs font-medium"
-              title="Export captured requests as JSON"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border disabled:opacity-40 text-app-text transition-colors text-xs font-semibold"
+              title="Export captured requests as HAR (Chrome DevTools compatible)"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export</span>
+              <span>HAR</span>
+            </button>
+
+            <button
+              onClick={handleExportJson}
+              disabled={requests.length === 0}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-app-primary hover:bg-app-primary-hover disabled:opacity-40 text-white transition-colors text-xs font-semibold"
+              title="Export captured requests as JSON"
+            >
+              <span>JSON</span>
             </button>
           </div>
         </div>
@@ -170,10 +184,10 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
               <button
                 key={m}
                 onClick={() => setSelectedMethod(m)}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono font-semibold transition-colors ${
+                className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition-colors border ${
                   selectedMethod === m
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-950 text-slate-400 hover:text-slate-200'
+                    ? 'bg-app-text text-app-bg border-app-text'
+                    : 'bg-app-bg text-app-muted border-app-border hover:text-app-text'
                 }`}
               >
                 {m}
@@ -185,30 +199,30 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setStatusFilter(statusFilter === '2xx' ? 'ALL' : '2xx')}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
                 statusFilter === '2xx'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-950 text-slate-400 hover:text-emerald-400'
+                  ? 'bg-app-success text-white border-app-success'
+                  : 'bg-app-bg text-app-muted border-app-border hover:text-app-success'
               }`}
             >
               2xx
             </button>
             <button
               onClick={() => setStatusFilter(statusFilter === '4xx' ? 'ALL' : '4xx')}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
                 statusFilter === '4xx'
-                  ? 'bg-amber-600 text-white'
-                  : 'bg-slate-950 text-slate-400 hover:text-amber-400'
+                  ? 'bg-app-warning text-white border-app-warning'
+                  : 'bg-app-bg text-app-muted border-app-border hover:text-app-warning'
               }`}
             >
               4xx
             </button>
             <button
               onClick={() => setStatusFilter(statusFilter === '5xx' ? 'ALL' : '5xx')}
-              className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
                 statusFilter === '5xx'
-                  ? 'bg-rose-600 text-white'
-                  : 'bg-slate-950 text-slate-400 hover:text-rose-400'
+                  ? 'bg-app-danger text-white border-app-danger'
+                  : 'bg-app-bg text-app-muted border-app-border hover:text-app-danger'
               }`}
             >
               5xx
@@ -216,10 +230,10 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
 
             <button
               onClick={() => setOnlySlow(!onlySlow)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${
+              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
                 onlySlow
-                  ? 'bg-rose-600 text-white'
-                  : 'bg-slate-950 text-slate-400 hover:text-rose-300'
+                  ? 'bg-app-danger text-white border-app-danger'
+                  : 'bg-app-bg text-app-muted border-app-border hover:text-app-danger'
               }`}
               title="Filter requests taking > 500ms"
             >
@@ -235,23 +249,23 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
         {/* Requests Table / List */}
         <div
           className={`flex-1 flex flex-col overflow-y-auto ${
-            selectedRequest ? 'hidden sm:flex sm:w-1/2 sm:border-r sm:border-slate-800' : 'w-full'
+            selectedRequest ? 'hidden sm:flex sm:w-1/2 sm:border-r sm:border-app-border' : 'w-full'
           }`}
         >
           {filteredRequests.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-500">
-              <Zap className="w-8 h-8 mb-2 opacity-30 text-indigo-400 animate-pulse" />
-              <p className="text-xs font-semibold text-slate-400">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-app-muted">
+              <Zap className="w-8 h-8 mb-2 opacity-40 text-app-primary" />
+              <p className="text-xs font-bold text-app-text">
                 {requests.length === 0
                   ? 'Listening for Fetch & XHR network traffic...'
                   : 'No requests match your current filters.'}
               </p>
-              <p className="text-[11px] text-slate-500 mt-1 max-w-xs">
-                Trigger an API call on the webpage, or adjust filters above to inspect requests.
+              <p className="text-[11px] text-app-muted mt-1 max-w-xs">
+                Trigger an API call on the webpage to inspect request metadata.
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-850">
+            <div className="divide-y divide-app-border">
               {filteredRequests.map((req) => {
                 const isSelected = req.id === selectedRequestId;
                 const statusColor = getStatusColor(req.status);
@@ -271,28 +285,28 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
                     onClick={() => setSelectedRequestId(req.id)}
                     className={`flex items-center justify-between gap-3 p-3 text-xs cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-indigo-950/50 border-l-2 border-indigo-500'
-                        : 'hover:bg-slate-900/60'
+                        ? 'bg-app-elevated border-l-2 border-app-primary'
+                        : 'hover:bg-app-surface'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {/* Method Badge */}
                       <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-mono ${methodColor}`}
+                        className={`px-1.5 py-0.2 rounded text-[10px] font-bold font-mono border ${methodColor}`}
                       >
                         {req.method}
                       </span>
 
                       {/* Status Badge */}
                       <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-semibold font-mono ${statusColor}`}
+                        className={`px-1.5 py-0.2 rounded text-[10px] font-bold font-mono border ${statusColor}`}
                       >
                         {req.status !== undefined && req.status > 0 ? req.status : 'ERR'}
                       </span>
 
                       {/* URL / Path */}
                       <span
-                        className="font-mono text-slate-300 truncate text-[11px]"
+                        className="font-mono text-app-text truncate text-[11px]"
                         title={req.url}
                       >
                         {displayPath}
@@ -301,7 +315,7 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
 
                     <div className="flex items-center gap-2 shrink-0">
                       {req.wasThrottled && (
-                        <span className="text-[10px] font-mono text-amber-400" title="Throttled">
+                        <span className="text-[10px] font-mono text-app-warning" title="Throttled">
                           ⏱️
                         </span>
                       )}
@@ -309,19 +323,19 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
                       {/* Duration */}
                       {req.duration !== undefined && (
                         <span
-                          className={`font-mono text-[11px] ${
+                          className={`font-mono text-[11px] font-semibold ${
                             req.isSlow
-                              ? 'text-rose-400 font-bold'
+                              ? 'text-app-danger font-bold'
                               : req.duration > 300
-                              ? 'text-amber-400'
-                              : 'text-slate-400'
+                              ? 'text-app-warning'
+                              : 'text-app-muted'
                           }`}
                         >
                           {req.duration}ms
                         </span>
                       )}
 
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[10px] text-app-faint font-mono">
                         {new Date(req.startTime).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -338,7 +352,7 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
 
         {/* Selected Request Details Drawer */}
         {selectedRequest && (
-          <div className="w-full sm:w-1/2 h-full absolute sm:relative top-0 right-0 z-10">
+          <div className="w-full sm:w-1/2 h-full absolute sm:relative top-0 right-0 z-10 bg-app-surface">
             <RequestDetailDrawer
               request={selectedRequest}
               onClose={() => setSelectedRequestId(null)}
@@ -349,17 +363,17 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
       </div>
 
       {/* Footer Status Bar */}
-      <div className="px-3 py-1.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+      <div className="px-3 py-1.5 bg-app-surface border-t border-app-border flex items-center justify-between text-[11px] text-app-muted font-mono">
         <div className="flex items-center gap-3">
           <span>{requests.length} requests captured</span>
           {filteredRequests.length !== requests.length && (
-            <span className="text-indigo-400">({filteredRequests.length} matching)</span>
+            <span className="text-app-primary">({filteredRequests.length} matching)</span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping" />
-            <span className="text-slate-300 font-sans">Live Hook Active</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-app-success inline-block" />
+            <span className="text-app-text font-sans font-medium">Hook Active</span>
           </span>
         </div>
       </div>
@@ -368,27 +382,26 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
 };
 
 function getStatusColor(status?: number): string {
-  if (!status || status === 0) return 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
-  if (status >= 200 && status < 300) return 'bg-emerald-500/20 text-emerald-300';
-  if (status >= 300 && status < 400) return 'bg-sky-500/20 text-sky-300';
-  if (status >= 400 && status < 500) return 'bg-amber-500/20 text-amber-300';
-  return 'bg-rose-500/20 text-rose-300';
+  if (!status || status === 0) return 'bg-app-danger-muted text-app-danger border-app-danger/40';
+  if (status >= 200 && status < 300) return 'bg-app-success-muted text-app-success border-app-success/40';
+  if (status >= 300 && status < 400) return 'bg-app-elevated text-app-accent border-app-border';
+  if (status >= 400 && status < 500) return 'bg-app-warning-muted text-app-warning border-app-warning/40';
+  return 'bg-app-danger-muted text-app-danger border-app-danger/40';
 }
 
 function getMethodColor(method: string): string {
   switch (method.toUpperCase()) {
     case 'GET':
-      return 'bg-emerald-500/20 text-emerald-300';
+      return 'bg-app-success-muted text-app-success border-app-success/40';
     case 'POST':
-      return 'bg-indigo-500/20 text-indigo-300';
+      return 'bg-app-elevated text-app-primary border-app-border';
     case 'PUT':
-      return 'bg-amber-500/20 text-amber-300';
+      return 'bg-app-warning-muted text-app-warning border-app-warning/40';
     case 'DELETE':
-      return 'bg-rose-500/20 text-rose-300';
+      return 'bg-app-danger-muted text-app-danger border-app-danger/40';
     case 'PATCH':
-      return 'bg-purple-500/20 text-purple-300';
+      return 'bg-app-elevated text-app-text border-app-border';
     default:
-      return 'bg-slate-800 text-slate-300';
+      return 'bg-app-elevated text-app-muted border-app-border';
   }
 }
-

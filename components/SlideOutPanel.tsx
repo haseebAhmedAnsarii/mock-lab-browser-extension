@@ -59,68 +59,68 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
 
   return (
     <>
-      {/* Toast Notification Banner */}
+      {/* Toast Notification Banner (Solid, No Gradient) */}
       {toastMessage && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000000] px-4 py-2 bg-slate-900/95 text-white text-xs font-sans rounded-full shadow-2xl border border-indigo-500/50 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150 backdrop-blur-md">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000000] px-4 py-2 bg-app-surface text-app-text text-xs font-sans rounded-md shadow-lg border border-app-border flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <Sparkles className="w-3.5 h-3.5 text-app-warning shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Floating Trigger Dock Button (Visible when closed) */}
+      {/* Floating Trigger Dock Button (Solid, No Gradient) */}
       {!isOpen && (
         <button
           onClick={onToggleOpen}
-          className="fixed bottom-6 right-6 z-[9999999] flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-950/95 hover:bg-slate-900 text-white rounded-full shadow-2xl border border-indigo-500/40 hover:border-indigo-400 transition-all hover:scale-105 group font-sans backdrop-blur-md"
+          className="fixed bottom-6 right-6 z-[9999999] flex items-center gap-2.5 px-3.5 py-2.5 bg-app-bg hover:bg-app-surface text-app-text rounded-lg shadow-xl border border-app-border transition-all hover:border-app-border-focus font-sans"
           title="Open Dev Mock & Chaos Testing Palette | APITrace"
         >
-          <div className="flex items-center gap-1.5">
-            <span className="p-1 rounded-full bg-rose-500/20 text-rose-400 group-hover:rotate-12 transition-transform">
-              <Flame className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2">
+            <span className="w-5 h-5 rounded flex items-center justify-center bg-app-primary text-white text-[11px] font-bold">
+              ⚡
             </span>
-            <span className="text-xs font-bold tracking-tight bg-gradient-to-r from-indigo-300 to-rose-300 bg-clip-text text-transparent">
-              DevMock & Trace
+            <span className="text-xs font-bold tracking-tight text-app-text">
+              DevMock &amp; Trace
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-[11px] font-mono pl-1 border-l border-slate-800">
+          <div className="flex items-center gap-1.5 text-[11px] font-mono pl-2 border-l border-app-border">
             {activeRulesCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">
+              <span className="px-1.5 py-0.2 rounded bg-app-warning-muted text-app-warning text-[10px] font-bold">
                 {activeRulesCount} throttled
               </span>
             )}
-            <span className="px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">
+            <span className="px-1.5 py-0.5 rounded bg-app-elevated text-app-text text-[10px] font-bold">
               {requests.length}
             </span>
           </div>
         </button>
       )}
 
-      {/* Slide-Out Drawer Panel */}
+      {/* Slide-Out Drawer Panel (Flat, Solid Architecture) */}
       {isOpen && (
         <div
-          className={`fixed top-0 right-0 h-full z-[9999999] bg-slate-950 text-slate-100 shadow-2xl border-l border-slate-800 flex flex-col font-sans transition-all duration-200 ${
-            isFullWidth ? 'w-full sm:w-[92vw]' : 'w-full sm:w-[680px]'
+          className={`fixed top-0 right-0 h-full z-[9999999] bg-app-bg text-app-text shadow-2xl border-l border-app-border flex flex-col font-sans transition-all duration-150 ${
+            isFullWidth ? 'w-full sm:w-[94vw]' : 'w-full sm:w-[680px]'
           }`}
           style={{ maxWidth: '100vw' }}
         >
-          {/* Main Top Header */}
-          <div className="p-3.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3">
+          {/* Main Top Header (Solid, No Gradient) */}
+          <div className="p-3.5 bg-app-surface border-b border-app-border flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-gradient-to-tr from-indigo-600 to-rose-500 text-white shadow-md">
-                <Flame className="w-4 h-4" />
-              </div>
+              <span className="w-6 h-6 rounded flex items-center justify-center bg-app-primary text-white text-xs font-bold">
+                ⚡
+              </span>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xs font-bold tracking-tight text-white uppercase">
-                    Dev Mock & Chaos Palette
+                  <h2 className="text-xs font-bold tracking-tight text-app-text uppercase">
+                    Dev Mock &amp; Chaos Palette
                   </h2>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-mono">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-app-elevated text-app-muted border border-app-border font-mono font-medium">
                     APITrace
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">
-                  UI stress tester, empty fallback simulator & API debugger
+                <p className="text-[11px] text-app-muted">
+                  UI stress tester, empty fallback simulator &amp; API monitor
                 </p>
               </div>
             </div>
@@ -128,14 +128,14 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsFullWidth(!isFullWidth)}
-                className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded text-app-muted hover:text-app-text hover:bg-app-elevated transition-colors"
                 title={isFullWidth ? 'Collapse width' : 'Expand full width'}
               >
                 {isFullWidth ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </button>
               <button
                 onClick={onToggleOpen}
-                className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded text-app-muted hover:text-app-text hover:bg-app-elevated transition-colors"
                 title="Close drawer"
               >
                 <X className="w-4 h-4" />
@@ -143,33 +143,33 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
             </div>
           </div>
 
-          {/* Navigation Tab Bar */}
-          <div className="flex items-center justify-between px-3 bg-slate-900/90 border-b border-slate-800 text-xs">
+          {/* Navigation Tab Bar (Solid, High-Contrast) */}
+          <div className="flex items-center justify-between px-3 bg-app-surface border-b border-app-border text-xs">
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setActiveTab('chaos')}
-                className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 font-semibold transition-all ${
+                className={`flex items-center gap-1.5 py-2.5 px-3 font-semibold transition-all ${
                   activeTab === 'chaos'
-                    ? 'border-rose-500 text-white bg-slate-800/40'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-b-2 border-app-danger text-app-text bg-app-elevated/40'
+                    : 'border-b-2 border-transparent text-app-muted hover:text-app-text'
                 }`}
               >
-                <Flame className="w-3.5 h-3.5 text-rose-500" />
+                <Flame className="w-3.5 h-3.5 text-app-danger" />
                 <span>Chaos Testing</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('latency')}
-                className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 font-semibold transition-all ${
+                className={`flex items-center gap-1.5 py-2.5 px-3 font-semibold transition-all ${
                   activeTab === 'latency'
-                    ? 'border-amber-500 text-white bg-slate-800/40'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-b-2 border-app-warning text-app-text bg-app-elevated/40'
+                    : 'border-b-2 border-transparent text-app-muted hover:text-app-text'
                 }`}
               >
-                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <Clock className="w-3.5 h-3.5 text-app-warning" />
                 <span>Route Latency</span>
                 {activeRulesCount > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-300 font-mono">
+                  <span className="px-1.5 py-0.2 rounded font-mono text-[10px] font-bold bg-app-warning-muted text-app-warning">
                     {activeRulesCount}
                   </span>
                 )}
@@ -177,15 +177,15 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
 
               <button
                 onClick={() => setActiveTab('apitrace')}
-                className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 font-semibold transition-all ${
+                className={`flex items-center gap-1.5 py-2.5 px-3 font-semibold transition-all ${
                   activeTab === 'apitrace'
-                    ? 'border-indigo-500 text-white bg-slate-800/40'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                    ? 'border-b-2 border-app-primary text-app-text bg-app-elevated/40'
+                    : 'border-b-2 border-transparent text-app-muted hover:text-app-text'
                 }`}
               >
-                <Activity className="w-3.5 h-3.5 text-indigo-400" />
+                <Activity className="w-3.5 h-3.5 text-app-primary" />
                 <span>APITrace</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-500/20 text-indigo-300 font-mono">
+                <span className="px-1.5 py-0.2 rounded font-mono text-[10px] font-bold bg-app-elevated text-app-text">
                   {requests.length}
                 </span>
               </button>
@@ -193,7 +193,7 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
           </div>
 
           {/* Active Tab Body */}
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 overflow-hidden relative bg-app-bg">
             {activeTab === 'chaos' && <ChaosPaletteTab onNotify={showToast} />}
             {activeTab === 'latency' && (
               <LatencyThrottleTab
@@ -218,4 +218,3 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
     </>
   );
 };
-

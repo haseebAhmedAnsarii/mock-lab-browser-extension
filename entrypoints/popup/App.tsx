@@ -9,7 +9,6 @@ import {
   Layers,
   ChevronRight,
   ShieldCheck,
-  Zap,
 } from 'lucide-react';
 
 export default function App() {
@@ -26,7 +25,6 @@ export default function App() {
       if (tabs[0]?.id) {
         chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_PAGE_STATS' }, (res) => {
           if (chrome.runtime.lastError) {
-            // Content script might not be injected on chrome:// or restricted pages
             return;
           }
           if (res) {
@@ -76,38 +74,38 @@ export default function App() {
     stats.domStats.textNodes + stats.domStats.images + stats.domStats.lists;
 
   return (
-    <div className="flex flex-col bg-slate-950 text-slate-100 p-4 space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+    <div className="flex flex-col bg-app-bg text-app-text p-4 space-y-4 font-sans select-none">
+      {/* Header (Solid Flat, No Gradients) */}
+      <div className="flex items-center justify-between pb-3 border-b border-app-border">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-gradient-to-tr from-indigo-600 to-rose-500 text-white shadow-md">
-            <Flame className="w-4 h-4" />
-          </div>
+          <span className="w-6 h-6 rounded flex items-center justify-center bg-app-primary text-white text-xs font-bold">
+            ⚡
+          </span>
           <div>
-            <h1 className="text-xs font-bold uppercase tracking-wider text-white">
-              Dev Mock & Chaos
+            <h1 className="text-xs font-bold uppercase tracking-wider text-app-text">
+              Dev Mock &amp; Chaos
             </h1>
-            <p className="text-[10px] text-indigo-400 font-mono">APITrace v1.0.0</p>
+            <p className="text-[10px] text-app-muted font-mono">APITrace v1.0.0</p>
           </div>
         </div>
 
-        <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded-full font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="flex items-center gap-1.5 text-[10px] text-app-success bg-app-success-muted border border-app-success/40 px-2 py-0.5 rounded font-mono font-bold">
+          <span className="w-1.5 h-1.5 rounded-full bg-app-success" />
           Active
         </span>
       </div>
 
       {/* Feedback Toast */}
       {statusMessage && (
-        <div className="p-2 bg-indigo-950 border border-indigo-700/60 rounded-lg text-[11px] text-indigo-200 text-center animate-in fade-in duration-150">
+        <div className="p-2 bg-app-surface border border-app-border-focus rounded text-[11px] text-app-text text-center">
           {statusMessage}
         </div>
       )}
 
-      {/* Big Launch Slide-Out Button */}
+      {/* Big Launch Slide-Out Button (Solid High-Contrast, No Gradients) */}
       <button
         onClick={handleTogglePanel}
-        className="w-full py-2.5 px-3 bg-gradient-to-r from-indigo-600 to-rose-600 hover:from-indigo-500 hover:to-rose-500 text-white rounded-xl text-xs font-semibold flex items-center justify-between shadow-lg shadow-indigo-950 transition-all hover:scale-[1.01]"
+        className="w-full py-2.5 px-3 bg-app-text hover:bg-white text-app-bg rounded text-xs font-bold flex items-center justify-between transition-colors shadow-sm"
       >
         <span className="flex items-center gap-2">
           <Layers className="w-4 h-4" />
@@ -118,48 +116,48 @@ export default function App() {
 
       {/* Real-time stats */}
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="p-2 bg-slate-900 border border-slate-800 rounded-lg">
-          <span className="block text-base font-bold font-mono text-indigo-400">
+        <div className="p-2.5 bg-app-surface border border-app-border rounded">
+          <span className="block text-base font-bold font-mono text-app-primary">
             {stats.requestCount}
           </span>
-          <span className="text-[10px] text-slate-400">Captured APIs</span>
+          <span className="text-[10px] text-app-muted font-medium">Captured</span>
         </div>
 
-        <div className="p-2 bg-slate-900 border border-slate-800 rounded-lg">
-          <span className="block text-base font-bold font-mono text-amber-400">
+        <div className="p-2.5 bg-app-surface border border-app-border rounded">
+          <span className="block text-base font-bold font-mono text-app-warning">
             {stats.activeRulesCount}
           </span>
-          <span className="text-[10px] text-slate-400">Throttles</span>
+          <span className="text-[10px] text-app-muted font-medium">Throttles</span>
         </div>
 
-        <div className="p-2 bg-slate-900 border border-slate-800 rounded-lg">
-          <span className="block text-base font-bold font-mono text-rose-400">
+        <div className="p-2.5 bg-app-surface border border-app-border rounded">
+          <span className="block text-base font-bold font-mono text-app-danger">
             {totalModifications}
           </span>
-          <span className="text-[10px] text-slate-400">DOM Chaos</span>
+          <span className="text-[10px] text-app-muted font-medium">DOM Chaos</span>
         </div>
       </div>
 
       {/* Quick Chaos Actions */}
       <div className="space-y-2">
-        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
-          One-Click Stress & Mock Actions
+        <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block">
+          One-Click Stress Actions
         </span>
 
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={handleSimulateEmptyLists}
-            className="flex items-center gap-2 p-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/50 rounded-lg text-left transition-colors text-xs text-slate-300"
+            className="flex items-center gap-2 p-2 bg-app-surface hover:bg-app-elevated border border-app-border rounded text-left transition-colors text-xs text-app-text"
           >
-            <EyeOff className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <EyeOff className="w-3.5 h-3.5 text-app-warning shrink-0" />
             <span className="truncate">Empty Lists</span>
           </button>
 
           <button
             onClick={handleSimulateBrokenImages}
-            className="flex items-center gap-2 p-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-rose-500/50 rounded-lg text-left transition-colors text-xs text-slate-300"
+            className="flex items-center gap-2 p-2 bg-app-surface hover:bg-app-elevated border border-app-border rounded text-left transition-colors text-xs text-app-text"
           >
-            <ImageOff className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <ImageOff className="w-3.5 h-3.5 text-app-danger shrink-0" />
             <span className="truncate">Break Images</span>
           </button>
         </div>
@@ -167,10 +165,10 @@ export default function App() {
         <button
           onClick={handleRevertAll}
           disabled={totalModifications === 0}
-          className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+          className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-bold border transition-all ${
             totalModifications > 0
-              ? 'bg-rose-950/40 text-rose-300 border-rose-800/60 hover:bg-rose-900/40'
-              : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed'
+              ? 'bg-app-danger-muted text-app-danger border-app-danger/40 hover:bg-app-danger/20'
+              : 'bg-app-surface text-app-faint border-app-border cursor-not-allowed'
           }`}
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -179,14 +177,13 @@ export default function App() {
       </div>
 
       {/* Security & Privacy Footer */}
-      <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500">
+      <div className="pt-2 border-t border-app-border flex items-center justify-between text-[10px] text-app-muted">
         <span className="flex items-center gap-1">
-          <ShieldCheck className="w-3 h-3 text-emerald-400" />
+          <ShieldCheck className="w-3 h-3 text-app-success" />
           <span>Bearer/Cookie Masking Active</span>
         </span>
-        <span>Manifest V3</span>
+        <span className="font-mono">MV3</span>
       </div>
     </div>
   );
 }
-

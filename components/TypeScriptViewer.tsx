@@ -34,19 +34,19 @@ export const TypeScriptViewer: React.FC<TypeScriptViewerProps> = ({
   const lines = tsCode.split('\n');
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 rounded-lg border border-slate-800 overflow-hidden">
+    <div className="flex flex-col h-full bg-app-bg rounded border border-app-border overflow-hidden">
       {/* Header toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-900 border-b border-slate-800">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-app-surface border-b border-app-border">
         <div className="flex items-center gap-2">
-          <FileCode2 className="w-4 h-4 text-indigo-400" />
-          <span className="text-xs font-semibold text-slate-200">TypeScript Generator</span>
+          <FileCode2 className="w-4 h-4 text-app-primary" />
+          <span className="text-xs font-bold text-app-text">TypeScript Generator</span>
           <div className="flex items-center gap-1.5 ml-2">
-            <label className="text-[11px] text-slate-400">Root Name:</label>
+            <label className="text-[11px] text-app-muted">Root Name:</label>
             <input
               type="text"
               value={rootName}
               onChange={(e) => setRootName(e.target.value)}
-              className="px-2 py-0.5 text-xs bg-slate-950 border border-slate-700 rounded text-slate-200 focus:outline-none focus:border-indigo-500 font-mono w-32"
+              className="px-2 py-0.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus font-mono w-32"
               placeholder="ApiResponse"
             />
           </div>
@@ -55,7 +55,7 @@ export const TypeScriptViewer: React.FC<TypeScriptViewerProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleDownload}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-app-bg hover:bg-app-elevated border border-app-border text-app-text transition-colors font-medium"
             title="Download .d.ts definition file"
           >
             <Download className="w-3.5 h-3.5" />
@@ -63,11 +63,11 @@ export const TypeScriptViewer: React.FC<TypeScriptViewerProps> = ({
           </button>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1 text-xs rounded font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1 text-xs rounded font-semibold bg-app-primary hover:bg-app-primary-hover text-white transition-colors"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-300" />
+                <Check className="w-3.5 h-3.5 text-app-success" />
                 <span>Copied</span>
               </>
             ) : (
@@ -81,14 +81,14 @@ export const TypeScriptViewer: React.FC<TypeScriptViewerProps> = ({
       </div>
 
       {/* Code viewer with line numbers */}
-      <div className="flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed">
+      <div className="flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed bg-app-bg">
         <div className="table w-full">
           {lines.map((line, idx) => (
-            <div key={idx} className="table-row hover:bg-slate-900/40">
-              <span className="table-cell select-none text-right pr-4 text-slate-600 w-8">
+            <div key={idx} className="table-row hover:bg-app-surface">
+              <span className="table-cell select-none text-right pr-4 text-app-faint w-8">
                 {idx + 1}
               </span>
-              <span className="table-cell whitespace-pre text-slate-200">
+              <span className="table-cell whitespace-pre text-app-text">
                 {formatTsLine(line)}
               </span>
             </div>
@@ -100,22 +100,20 @@ export const TypeScriptViewer: React.FC<TypeScriptViewerProps> = ({
 };
 
 function formatTsLine(line: string): React.ReactNode {
-  // Simple syntax highlight helpers for export, interface, type, string, number, boolean
   if (line.trim().startsWith('export interface') || line.trim().startsWith('export type')) {
-    return <span className="text-purple-400 font-semibold">{line}</span>;
+    return <span className="text-app-primary font-bold">{line}</span>;
   }
   if (line.includes(': string;')) {
-    return <span className="text-emerald-300">{line}</span>;
+    return <span className="text-app-success">{line}</span>;
   }
   if (line.includes(': number;')) {
-    return <span className="text-sky-300">{line}</span>;
+    return <span className="text-app-accent">{line}</span>;
   }
   if (line.includes(': boolean;')) {
-    return <span className="text-amber-300">{line}</span>;
+    return <span className="text-app-warning">{line}</span>;
   }
   if (line.includes('//')) {
-    return <span className="text-slate-500 italic">{line}</span>;
+    return <span className="text-app-faint italic">{line}</span>;
   }
   return line;
 }
-
