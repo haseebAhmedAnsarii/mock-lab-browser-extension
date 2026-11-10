@@ -6,19 +6,19 @@
   <title>Dev Mock & Chaos Palette | Test Workbench</title>
   <style>
     :root {
-      --bg: #09090b;              /* Deep matte neutral zinc */
-      --card-bg: #18181b;         /* Solid card surface */
-      --card-elevated: #27272a;    /* Elevated surface */
-      --border: #27272a;          /* Crisp hairline border */
-      --border-focus: #3f3f46;    /* Active border */
-      --text: #fafafa;            /* High-contrast text */
-      --text-muted: #a1a1aa;      /* Secondary text */
-      --text-faint: #71717a;      /* Faint text */
-      --primary: #5e6ad2;         /* Solid Linear indigo */
-      --primary-hover: #4f5ac4;
-      --danger: #f43f5e;
-      --warning: #f59e0b;
-      --success: #10b981;
+      --bg: #141413;              /* Tactile matte stone black */
+      --card-bg: #1c1b1a;         /* Warm stone card surface */
+      --card-elevated: #282725;    /* Elevated surface */
+      --border: #302f2c;          /* Hairline warm border */
+      --border-focus: #d97706;    /* Amber active border */
+      --text: #e6e4df;            /* Warm paper white */
+      --text-muted: #9c9992;      /* Secondary stone gray */
+      --text-faint: #6e6c66;      /* Faint text */
+      --primary: #d97706;         /* Industrial amber */
+      --primary-hover: #b45309;
+      --danger: #e11d48;
+      --warning: #d97706;
+      --success: #16a34a;
     }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
@@ -91,11 +91,11 @@
     }
     button.btn {
       background: var(--primary);
-      color: #ffffff;
+      color: #141413;
       border: 1px solid var(--primary);
       padding: 7px 14px;
       border-radius: 6px;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 12px;
       cursor: pointer;
       transition: background-color 0.15s, border-color 0.15s;
@@ -108,6 +108,7 @@
     button.btn:hover {
       background: var(--primary-hover);
       border-color: var(--primary-hover);
+      color: #ffffff;
     }
     .btn-secondary {
       background: var(--card-elevated) !important;
@@ -117,6 +118,7 @@
     .btn-secondary:hover {
       background: var(--border-focus) !important;
       border-color: var(--border-focus) !important;
+      color: #141413 !important;
     }
     .truncate-box {
       width: 260px;
@@ -177,7 +179,7 @@
       padding: 12px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 11px;
-      color: var(--success);
+      color: var(--primary);
       height: 120px;
       overflow-y: auto;
       margin-top: 14px;
@@ -199,7 +201,7 @@
     <header>
       <span class="badge">Workbench v1.0.0</span>
       <h1>Dev Mock &amp; Chaos Testing Palette | APITrace</h1>
-      <p>Test text stress injection, container overflows, empty state simulation, route latency, and API debugging with zero gradients.</p>
+      <p>Test text stress injection, container overflows, empty state simulation, route latency, and API debugging with Industrial Stone &amp; Amber theme.</p>
     </header>
 
     <div class="grid">
@@ -243,8 +245,8 @@
         <p>Test the 1-click empty-state simulator and broken image fallback handlers.</p>
 
         <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="avatar" alt="Avatar 1" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\'><rect width=\'44\' height=\'44\' fill=\'%2327272a\'/><text x=\'50%25\' y=\'55%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23a1a1aa\' font-size=\'13\' font-family=\'sans-serif\' font-weight=\'bold\'>FB</text></svg>'" />
-          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" class="avatar" alt="Avatar 2" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\'><rect width=\'44\' height=\'44\' fill=\'%2327272a\'/><text x=\'50%25\' y=\'55%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23a1a1aa\' font-size=\'13\' font-family=\'sans-serif\' font-weight=\'bold\'>JD</text></svg>'" />
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop" class="avatar" alt="Avatar 1" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\'><rect width=\'44\' height=\'44\' fill=\'%23282725\'/><text x=\'50%25\' y=\'55%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23d97706\' font-size=\'13\' font-family=\'sans-serif\' font-weight=\'bold\'>FB</text></svg>'" />
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" class="avatar" alt="Avatar 2" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\'><rect width=\'44\' height=\'44\' fill=\'%23282725\'/><text x=\'50%25\' y=\'55%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23d97706\' font-size=\'13\' font-family=\'sans-serif\' font-weight=\'bold\'>JD</text></svg>'" />
         </div>
 
         <ul class="item-list" id="sampleTodoList">

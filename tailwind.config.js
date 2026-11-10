@@ -10,23 +10,23 @@ export default {
     extend: {
       colors: {
         app: {
-          bg: '#09090b',              // Deep matte neutral zinc
-          surface: '#18181b',         // Card & drawer surface
-          elevated: '#27272a',        // Elevated panel & hover state
-          border: '#27272a',          // Crisp hairline border
-          'border-focus': '#3f3f46',  // Active / focused border
-          text: '#fafafa',            // High-contrast primary text
-          muted: '#a1a1aa',           // Secondary label text
-          faint: '#71717a',           // Microcopy & placeholders
-          primary: '#5e6ad2',         // Solid Linear indigo
-          'primary-hover': '#4f5ac4',
-          accent: '#3b82f6',          // Clean solid blue
-          danger: '#f43f5e',          // Solid flat rose
-          'danger-muted': '#2e1017',
-          warning: '#f59e0b',         // Solid flat amber
-          'warning-muted': '#2b1807',
-          success: '#10b981',         // Solid flat emerald
-          'success-muted': '#0a2417',
+          bg: '#141413',              // Tactile matte stone black
+          surface: '#1c1b1a',         // Card & drawer warm stone surface
+          elevated: '#282725',        // Elevated panel & hover state
+          border: '#302f2c',          // Hairline warm border
+          'border-focus': '#d97706',  // Amber active/focused border
+          text: '#e6e4df',            // Warm tactile paper white
+          muted: '#9c9992',           // Secondary stone gray
+          faint: '#6e6c66',           // Microcopy & placeholders
+          primary: '#d97706',         // Industrial amber / ochre
+          'primary-hover': '#b45309', // Darker amber
+          accent: '#d97706',          // Industrial amber accent
+          danger: '#e11d48',          // Solid crimson / rose
+          'danger-muted': '#4c0519',
+          warning: '#d97706',         // Industrial amber
+          'warning-muted': '#3e2200',
+          success: '#16a34a',         // Solid forest green
+          'success-muted': '#052e16',
         },
       },
       fontFamily: {
