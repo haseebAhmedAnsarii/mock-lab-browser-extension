@@ -179,7 +179,7 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
           </div>
           <span className="text-xs font-bold text-app-text">Empty List Simulator</span>
           <span className="text-[11px] text-app-muted mt-0.5">
-            Wipes lists &amp; tables to test empty state illustrations
+            Wipes lists, tables &amp; grids to test empty state illustrations
           </span>
         </button>
 
