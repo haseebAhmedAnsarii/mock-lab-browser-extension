@@ -21,9 +21,6 @@ Testing UI edge cases usually requires editing mock files, altering database rec
   - Empties lists (`ul`, `ol`, `dl`), tables, and grid collections to test empty-state illustrations and fallback text without deleting server data.
 - **Image Fallback & Broken Avatar Simulator**:
   - Dispatches `onerror` and replaces image sources with broken/fallback targets to test skeleton loaders, initials avatars, and alt text.
-- **DOM MutationObserver Overflow Scanner**:
-  - Continuously monitors layout dimensions and text clipping (`scrollWidth > clientWidth`).
-  - Displays floating badges (`⚠️ Overflow +XXpx`) and dashed outlines around overflowing containers.
 - **Non-Destructive DOM Snapshot & Revert**:
   - Keeps an in-memory snapshot of original text nodes, image sources, and emptied container children.
   - Single-click **"Restore Original Page"** reverts all mutations back to pristine state.
@@ -81,7 +78,7 @@ Frontend developers frequently switch between their application and the DevTools
 │       ├── main.tsx
 │       └── App.tsx
 ├── components/
-│   ├── ChaosPaletteTab.tsx       # Text stress, element picker, empty-state, overflow scanner
+│   ├── ChaosPaletteTab.tsx       # Text stress, element picker, empty-state, broken images
 │   ├── LatencyThrottleTab.tsx    # Route latency rules and synthetic status mocks
 │   ├── ApiTraceTab.tsx           # Real-time request table, filters, search, slow request detector
 │   ├── RequestDetailDrawer.tsx   # Request/response inspector, cURL, header sanitizer
@@ -90,7 +87,7 @@ Frontend developers frequently switch between their application and the DevTools
 │   └── SlideOutPanel.tsx         # Slide-out drawer container and floating trigger pill
 ├── utils/
 │   ├── chaos-presets.ts          # Curated stress test payloads
-│   ├── dom-chaos.ts              # DOM mutation engine, snapshots, overflow MutationObserver
+│   ├── dom-chaos.ts              # DOM mutation engine, snapshots, and tree walkers
 │   ├── json-to-ts.ts             # Recursive JSON to TypeScript generator
 │   ├── curl.ts                   # cURL converter and JSON exporter
 │   ├── sanitizer.ts              # Sensitive header & credential masker
@@ -147,7 +144,6 @@ The output directory will be created at `.output/chrome-mv3`.
    - **Chaos Testing tab**: Click presets like *German Compound*, *Arabic RTL*, or *Zalgo* to test truncation.
    - **Empty List Simulator**: Click to empty the item list and check fallback states.
    - **Broken Image Tester**: Click to verify fallback avatar handling.
-   - **Overflow Scanner**: Toggle ON to observe floating `⚠️ Overflow` badges.
    - **Route Latency tab**: Add a latency rule or click a quick preset (e.g. `*/api/*` +2000ms delay).
    - **APITrace tab**: Click the buttons on the demo page (*Fetch /api/users*, *Post /api/orders*). Inspect headers, generate TypeScript interfaces, and export as cURL!
 4. Click **"Restore Page"** to instantly revert all DOM mutations.

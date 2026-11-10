@@ -7,13 +7,6 @@ class DOMChaosEngine {
     emptiedContainers: new Map(),
   };
 
-  private overflowObserver: MutationObserver | null = null;
-  private isHighlightingOverflow: boolean = false;
-  private isScanning: boolean = false;
-  private scanDebounceTimer: number | null = null;
-  private badgeContainer: HTMLElement | null = null;
-  private highlightedElements: Set<HTMLElement> = new Set();
-
   private pickerActive: boolean = false;
   private pickerHoverOverlay: HTMLElement | null = null;
   private onElementPickedCallback: ((el: HTMLElement) => void) | null = null;
@@ -217,173 +210,7 @@ class DOMChaosEngine {
     }
     this.snapshot.emptiedContainers.clear();
 
-    // Remove overflow highlights
-    this.clearOverflowHighlights();
-
     return { restoredTexts, restoredImages, restoredLists };
-  }
-
-  /**
-   * Overflow Scanner:
-   * Uses DOM MutationObserver and element dimension checks with debounce and self-mutation guards.
-   */
-  public toggleOverflowHighlight(enabled: boolean): void {
-    this.isHighlightingOverflow = enabled;
-
-    if (!enabled) {
-      if (this.scanDebounceTimer) {
-        cancelAnimationFrame(this.scanDebounceTimer);
-        this.scanDebounceTimer = null;
-      }
-      if (this.overflowObserver) {
-        this.overflowObserver.disconnect();
-        this.overflowObserver = null;
-      }
-      this.clearOverflowHighlights();
-      return;
-    }
-
-    // Run initial scan
-    this.scanAndHighlightOverflow();
-
-    // Observe dynamic changes with debounce & self-mutation filtering
-    this.overflowObserver = new MutationObserver((mutations) => {
-      if (!this.isHighlightingOverflow || this.isScanning) return;
-
-      // Filter out mutations caused by our own extension UI and badge layer
-      const isSelfMutation = mutations.every((m) => {
-        const target = m.target as HTMLElement;
-        return (
-          target?.closest?.('#dev-chaos-apitrace-root') ||
-          target?.closest?.('#dev-chaos-overflow-layer') ||
-          (m.target as HTMLElement)?.id === 'dev-chaos-overflow-layer' ||
-          (m.target as HTMLElement)?.hasAttribute?.('data-chaos-overflow')
-        );
-      });
-      if (isSelfMutation) return;
-
-      // Debounce using requestAnimationFrame (at most 1 scan per frame)
-      if (this.scanDebounceTimer) {
-        cancelAnimationFrame(this.scanDebounceTimer);
-      }
-      this.scanDebounceTimer = requestAnimationFrame(() => {
-        if (this.isHighlightingOverflow && !this.isScanning) {
-          this.scanAndHighlightOverflow();
-        }
-      });
-    });
-
-    this.overflowObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-  }
-
-  private getOrCreateBadgeLayer(): HTMLElement {
-    if (!this.badgeContainer || !this.badgeContainer.isConnected) {
-      this.badgeContainer = document.createElement('div');
-      this.badgeContainer.id = 'dev-chaos-overflow-layer';
-      this.badgeContainer.style.position = 'absolute';
-      this.badgeContainer.style.top = '0';
-      this.badgeContainer.style.left = '0';
-      this.badgeContainer.style.width = '100%';
-      this.badgeContainer.style.pointerEvents = 'none';
-      this.badgeContainer.style.zIndex = '999998';
-      document.body.appendChild(this.badgeContainer);
-    }
-    return this.badgeContainer;
-  }
-
-  private scanAndHighlightOverflow(): void {
-    if (this.isScanning) return;
-    this.isScanning = true;
-
-    try {
-      this.clearOverflowHighlights();
-
-      // Only scan visible structural content and text containers to avoid layout thrashing
-      const candidates = document.querySelectorAll<HTMLElement>(
-        'div, p, span, h1, h2, h3, h4, h5, h6, ul, ol, li, section, article, a, button, table, td, th'
-      );
-
-      const layer = this.getOrCreateBadgeLayer();
-      let badgeCount = 0;
-      const MAX_BADGES = 40; // Cap to top 40 overflows to maintain 60 FPS
-
-      for (const el of Array.from(candidates)) {
-        if (badgeCount >= MAX_BADGES) break;
-        if (el === document.body || el === document.documentElement) continue;
-        if (el.closest('#dev-chaos-apitrace-root') || el.closest('#dev-chaos-overflow-layer')) continue;
-
-        // Skip non-rendered / hidden elements (avoids forced layout reflows)
-        if (!el.offsetParent && el.offsetWidth === 0 && el.offsetHeight === 0) continue;
-
-        const clientW = el.clientWidth;
-        const scrollW = el.scrollWidth;
-        const deltaX = scrollW - clientW;
-
-        const clientH = el.clientHeight;
-        const scrollH = el.scrollHeight;
-        const deltaY = scrollH - clientH;
-
-        // Fast check before getComputedStyle
-        if (deltaX <= 3 && deltaY <= 3) continue;
-
-        const style = window.getComputedStyle(el);
-        if (style.overflowX === 'scroll' || style.overflowX === 'auto') continue;
-
-        // Detect horizontal overflow, or vertical overflow with overflow: hidden
-        if (deltaX > 3 || (deltaY > 3 && style.overflowY === 'hidden')) {
-          el.setAttribute('data-chaos-overflow', 'true');
-          el.style.outline = '2px dashed #e11d48';
-          el.style.outlineOffset = '2px';
-          this.highlightedElements.add(el);
-
-          // Create badge
-          const badge = document.createElement('div');
-          badge.className = 'chaos-overflow-badge';
-          badge.textContent = `⚠️ Overflow +${Math.max(deltaX, deltaY)}px`;
-          badge.style.position = 'absolute';
-          badge.style.backgroundColor = '#e11d48';
-          badge.style.color = '#ffffff';
-          badge.style.fontSize = '10px';
-          badge.style.fontFamily = 'monospace';
-          badge.style.fontWeight = 'bold';
-          badge.style.padding = '1px 5px';
-          badge.style.borderRadius = '3px';
-          badge.style.pointerEvents = 'none';
-
-          const rect = el.getBoundingClientRect();
-          badge.style.top = `${window.scrollY + rect.top - 16}px`;
-          badge.style.left = `${window.scrollX + Math.max(0, rect.left)}px`;
-
-          layer.appendChild(badge);
-          badgeCount++;
-        }
-      }
-    } finally {
-      this.isScanning = false;
-    }
-  }
-
-  public clearOverflowHighlights(): void {
-    for (const el of this.highlightedElements) {
-      try {
-        el.style.outline = '';
-        el.style.outlineOffset = '';
-        el.removeAttribute('data-chaos-overflow');
-      } catch {
-        // Element might have been detached
-      }
-    }
-    this.highlightedElements.clear();
-
-    if (this.badgeContainer) {
-      while (this.badgeContainer.firstChild) {
-        this.badgeContainer.removeChild(this.badgeContainer.firstChild);
-      }
-    }
   }
 
   /**
@@ -408,7 +235,7 @@ class DOMChaosEngine {
     const handleMouseMove = (e: MouseEvent) => {
       if (!this.pickerActive) return;
       const target = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
-      if (!target || target.closest('#dev-chaos-apitrace-root') || target.closest('#dev-chaos-overflow-layer')) {
+      if (!target || target.closest('#dev-chaos-apitrace-root')) {
         if (this.pickerHoverOverlay) this.pickerHoverOverlay.style.display = 'none';
         return;
       }
@@ -431,7 +258,7 @@ class DOMChaosEngine {
       const target = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
       this.stopElementPicker();
 
-      if (target && !target.closest('#dev-chaos-apitrace-root') && !target.closest('#dev-chaos-overflow-layer') && this.onElementPickedCallback) {
+      if (target && !target.closest('#dev-chaos-apitrace-root') && this.onElementPickedCallback) {
         this.onElementPickedCallback(target);
       }
     };

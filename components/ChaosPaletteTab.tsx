@@ -4,7 +4,6 @@ import {
   RotateCcw,
   MousePointer,
   Sparkles,
-  AlertTriangle,
   EyeOff,
   ImageOff,
   Type,
@@ -23,7 +22,6 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
   const [customText, setCustomText] = useState('');
   const [isPickingElement, setIsPickingElement] = useState(false);
   const [pickedElement, setPickedElement] = useState<HTMLElement | null>(null);
-  const [overflowScanning, setOverflowScanning] = useState(false);
   const [stats, setStats] = useState(domChaos.getModifiedCounts());
 
   const categories: { id: TextStressPresetCategory | 'all'; label: string }[] = [
@@ -115,17 +113,6 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
     );
   };
 
-  const handleToggleOverflowScan = () => {
-    const next = !overflowScanning;
-    setOverflowScanning(next);
-    domChaos.toggleOverflowHighlight(next);
-    onNotify?.(
-      next
-        ? 'Active MutationObserver scanning for container text clipping / overflow.'
-        : 'Stopped overflow scanner.'
-    );
-  };
-
   const filteredPresets = CHAOS_PRESETS.filter(
     (p) => selectedCategory === 'all' || p.category === selectedCategory
   );
@@ -164,7 +151,7 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
       </div>
 
       {/* Quick Chaos Simulation Actions (Solid Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <button
           onClick={handleSimulateEmptyLists}
           className="flex flex-col p-3 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all"
@@ -198,32 +185,6 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
           <span className="text-xs font-bold text-app-text">Broken Image Tester</span>
           <span className="text-[11px] text-app-muted mt-0.5">
             Triggers onerror to test fallback avatars &amp; icons
-          </span>
-        </button>
-
-        <button
-          onClick={handleToggleOverflowScan}
-          className={`flex flex-col p-3 rounded-lg text-left border transition-all ${
-            overflowScanning
-              ? 'bg-app-danger-muted border-app-danger text-app-danger'
-              : 'bg-app-surface hover:bg-app-elevated border-app-border text-app-text'
-          }`}
-        >
-          <div className="flex items-center justify-between w-full mb-1">
-            <span
-              className={`p-1.5 rounded ${
-                overflowScanning ? 'bg-app-danger text-white' : 'bg-app-elevated text-app-text'
-              }`}
-            >
-              <AlertTriangle className="w-4 h-4" />
-            </span>
-            <span className="text-[11px] font-mono font-bold">
-              {overflowScanning ? 'SCANNING' : 'OFF'}
-            </span>
-          </div>
-          <span className="text-xs font-bold">Overflow Scanner</span>
-          <span className="text-[11px] text-app-muted mt-0.5">
-            MutationObserver badge highlights container clipping
           </span>
         </button>
       </div>

@@ -57,7 +57,6 @@ export interface ChaosState {
   isActive: boolean;
   activePresetId?: string;
   emptyStateActive: boolean;
-  overflowHighlightActive: boolean;
   emptyImagesActive: boolean;
   modifiedElementsCount: number;
 }
