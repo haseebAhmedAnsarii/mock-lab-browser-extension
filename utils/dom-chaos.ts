@@ -16,63 +16,90 @@ class DOMChaosEngine {
   private onElementPickedCallback: ((el: HTMLElement) => void) | null = null;
 
   /**
-   * Stresses text content within specified selector or all matching elements.
+   * Helper that traverses and modifies all text nodes inside an element and its subtree.
+   */
+  private stressElementSubtree(root: HTMLElement, stressText: string): number {
+    if (root.closest('#dev-chaos-apitrace-root')) return 0;
+    let modifiedCount = 0;
+
+    // 1. Direct inputs / textareas / button values
+    if (root instanceof HTMLInputElement || root instanceof HTMLTextAreaElement) {
+      if (root.placeholder) {
+        if (!this.snapshot.originalTextMap.has(root as any)) {
+          this.snapshot.originalTextMap.set(root as any, root.placeholder);
+        }
+        root.placeholder = stressText;
+        modifiedCount++;
+      }
+      if (root instanceof HTMLInputElement && ['button', 'submit', 'reset'].includes(root.type)) {
+        if (!this.snapshot.originalTextMap.has(root as any)) {
+          this.snapshot.originalTextMap.set(root as any, root.value);
+        }
+        root.value = stressText;
+        modifiedCount++;
+      }
+    }
+
+    // 2. Find and stress all text nodes within the element's subtree
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: (node) => {
+        if (!node.textContent || node.textContent.trim().length === 0) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        if (node.parentElement?.closest('#dev-chaos-apitrace-root')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+
+    let textNode = walker.nextNode();
+    while (textNode) {
+      if (!this.snapshot.originalTextMap.has(textNode)) {
+        this.snapshot.originalTextMap.set(textNode, textNode.textContent || '');
+      }
+      textNode.textContent = stressText;
+      modifiedCount++;
+      textNode = walker.nextNode();
+    }
+
+    // 3. Also check descendant inputs / textareas (if root is a container)
+    const inputs = root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
+    for (const input of Array.from(inputs)) {
+      if (input.closest('#dev-chaos-apitrace-root')) continue;
+      if (input.placeholder) {
+        if (!this.snapshot.originalTextMap.has(input as any)) {
+          this.snapshot.originalTextMap.set(input as any, input.placeholder);
+        }
+        input.placeholder = stressText;
+        modifiedCount++;
+      }
+    }
+
+    return modifiedCount;
+  }
+
+  /**
+   * Stresses text content within specified selector or on a specifically picked root element.
    */
   public injectTextStress(
     stressText: string,
     targetSelector?: string,
     specificRoot?: HTMLElement
   ): number {
-    const root = specificRoot || document.body;
-    let modifiedCount = 0;
-
-    let elements: HTMLElement[] = [];
-    if (targetSelector) {
-      elements = Array.from(root.querySelectorAll<HTMLElement>(targetSelector));
-      if (root.matches && root.matches(targetSelector)) {
-        elements.unshift(root);
-      }
-    } else {
-      // Default to common text containers
-      elements = Array.from(
-        root.querySelectorAll<HTMLElement>('p, span, h1, h2, h3, h4, h5, h6, button, a, td, th, li, label')
-      );
+    if (specificRoot) {
+      // User picked a specific element (heading, paragraph, card, button, etc.)
+      return this.stressElementSubtree(specificRoot, stressText);
     }
 
+    // Global selector mode across the document
+    const root = document.body;
+    let modifiedCount = 0;
+    const selector = targetSelector || 'p, span, h1, h2, h3, h4, h5, h6, button, a, td, th, li, label';
+    const elements = Array.from(root.querySelectorAll<HTMLElement>(selector));
+
     for (const el of elements) {
-      // Skip the extension's own UI
-      if (el.closest('#dev-chaos-apitrace-root')) continue;
-
-      // Find direct text nodes inside element
-      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
-        acceptNode: (node) => {
-          if (!node.textContent || node.textContent.trim().length === 0) {
-            return NodeFilter.FILTER_REJECT;
-          }
-          if (node.parentElement?.closest('#dev-chaos-apitrace-root')) {
-            return NodeFilter.FILTER_REJECT;
-          }
-          return NodeFilter.FILTER_ACCEPT;
-        },
-      });
-
-      let textNode = walker.nextNode();
-      while (textNode) {
-        if (!this.snapshot.originalTextMap.has(textNode)) {
-          this.snapshot.originalTextMap.set(textNode, textNode.textContent || '');
-        }
-        textNode.textContent = stressText;
-        modifiedCount++;
-        textNode = walker.nextNode();
-      }
-
-      // If it's an input or textarea, update placeholder or value
-      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-        if (el.placeholder) {
-          el.placeholder = stressText;
-          modifiedCount++;
-        }
-      }
+      modifiedCount += this.stressElementSubtree(el, stressText);
     }
 
     return modifiedCount;
@@ -143,10 +170,17 @@ class DOMChaosEngine {
     let restoredImages = 0;
     let restoredLists = 0;
 
-    // Restore text nodes
+    // Restore text nodes and input placeholders
     for (const [node, originalVal] of this.snapshot.originalTextMap.entries()) {
       try {
-        node.textContent = originalVal;
+        if (node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement) {
+          if (node.placeholder !== undefined) node.placeholder = originalVal;
+          if (node instanceof HTMLInputElement && ['button', 'submit', 'reset'].includes(node.type)) {
+            node.value = originalVal;
+          }
+        } else {
+          node.textContent = originalVal;
+        }
         restoredTexts++;
       } catch {
         // Node might have been removed
@@ -238,7 +272,7 @@ class DOMChaosEngine {
       // Noticeable overflow (> 3px)
       if (deltaX > 3 || (deltaY > 3 && style.overflowY === 'hidden')) {
         el.setAttribute('data-chaos-overflow', 'true');
-        el.style.outline = '2px dashed #f43f5e';
+        el.style.outline = '2px dashed #e11d48';
         el.style.outlineOffset = '2px';
 
         // Floating badge indicator
@@ -246,7 +280,7 @@ class DOMChaosEngine {
         badge.className = 'chaos-overflow-badge';
         badge.textContent = `⚠️ Overflow +${Math.max(deltaX, deltaY)}px`;
         badge.style.position = 'absolute';
-        badge.style.backgroundColor = '#f43f5e';
+        badge.style.backgroundColor = '#e11d48';
         badge.style.color = '#ffffff';
         badge.style.fontSize = '10px';
         badge.style.fontFamily = 'monospace';
@@ -291,8 +325,8 @@ class DOMChaosEngine {
       this.pickerHoverOverlay = document.createElement('div');
       this.pickerHoverOverlay.style.position = 'fixed';
       this.pickerHoverOverlay.style.pointerEvents = 'none';
-      this.pickerHoverOverlay.style.border = '2px solid #6366f1';
-      this.pickerHoverOverlay.style.backgroundColor = 'rgba(99, 102, 241, 0.15)';
+      this.pickerHoverOverlay.style.border = '2px solid #d97706';
+      this.pickerHoverOverlay.style.backgroundColor = 'rgba(217, 119, 6, 0.15)';
       this.pickerHoverOverlay.style.zIndex = '9999999';
       this.pickerHoverOverlay.style.transition = 'all 0.05s ease';
       this.pickerHoverOverlay.style.display = 'none';
@@ -363,4 +397,3 @@ class DOMChaosEngine {
 }
 
 export const domChaos = new DOMChaosEngine();
-
