@@ -77,13 +77,18 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
 
   const handleStartPicker = () => {
     setIsPickingElement(true);
-    domChaos.startElementPicker((el) => {
-      setIsPickingElement(false);
-      setPickedElement(el);
-      const tag = el.tagName.toLowerCase();
-      const idOrClass = el.id ? `#${el.id}` : el.className ? `.${el.className.split(' ')[0]}` : '';
-      onNotify?.(`Target locked: <${tag}${idOrClass}>. Pick a stress preset below.`);
-    });
+    domChaos.startElementPicker(
+      (el) => {
+        setIsPickingElement(false);
+        setPickedElement(el);
+        const tag = el.tagName.toLowerCase();
+        const idOrClass = el.id ? `#${el.id}` : el.className ? `.${el.className.split(' ')[0]}` : '';
+        onNotify?.(`Target locked: <${tag}${idOrClass}>. Pick a stress preset below.`);
+      },
+      () => {
+        setIsPickingElement(false);
+      }
+    );
   };
 
   const handleCancelPicker = () => {

@@ -10,12 +10,55 @@ class DOMChaosEngine {
   private pickerActive: boolean = false;
   private pickerHoverOverlay: HTMLElement | null = null;
   private onElementPickedCallback: ((el: HTMLElement) => void) | null = null;
+  private onElementPickerCancelCallback: (() => void) | null = null;
+
+  /**
+   * Helper that checks whether an element or node belongs to our extension UI
+   * (including the Shadow DOM host, drawer, dock, or hover overlay).
+   */
+  public isExtensionElement(el: Node | null | undefined): boolean {
+    if (!el) return false;
+    if (el === this.pickerHoverOverlay) return true;
+    if (el instanceof Element) {
+      const tag = el.tagName.toLowerCase();
+      if (
+        tag === 'dev-chaos-apitrace-root' ||
+        tag === 'wxt-shadow-root' ||
+        el.id === 'dev-chaos-apitrace-root' ||
+        Boolean(el.closest('dev-chaos-apitrace-root, #dev-chaos-apitrace-root, [id*="dev-chaos"]'))
+      ) {
+        return true;
+      }
+    }
+    const root = el.getRootNode?.();
+    if (root instanceof ShadowRoot && root.host) {
+      return this.isExtensionElement(root.host);
+    }
+    if (el.parentElement) {
+      return this.isExtensionElement(el.parentElement);
+    }
+    return false;
+  }
+
+  /**
+   * Checks whether a browser event originated from inside the extension UI
+   * across Shadow DOM boundaries via composedPath().
+   */
+  private isExtensionEvent(e: Event): boolean {
+    const path = e.composedPath();
+    for (const item of path) {
+      if (this.isExtensionElement(item as Node)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   /**
    * Helper that traverses and modifies all text nodes inside an element and its subtree.
    */
   private stressElementSubtree(root: HTMLElement, stressText: string): number {
-    if (root.closest('#dev-chaos-apitrace-root')) return 0;
+    if (this.isExtensionElement(root)) return 0;
     let modifiedCount = 0;
 
     // 1. Direct inputs / textareas / button values
@@ -42,7 +85,7 @@ class DOMChaosEngine {
         if (!node.textContent || node.textContent.trim().length === 0) {
           return NodeFilter.FILTER_REJECT;
         }
-        if (node.parentElement?.closest('#dev-chaos-apitrace-root')) {
+        if (this.isExtensionElement(node.parentElement)) {
           return NodeFilter.FILTER_REJECT;
         }
         return NodeFilter.FILTER_ACCEPT;
@@ -62,7 +105,7 @@ class DOMChaosEngine {
     // 3. Also check descendant inputs / textareas (if root is a container)
     const inputs = root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
     for (const input of Array.from(inputs)) {
-      if (input.closest('#dev-chaos-apitrace-root')) continue;
+      if (this.isExtensionElement(input)) continue;
       if (input.placeholder) {
         if (!this.snapshot.originalTextMap.has(input as any)) {
           this.snapshot.originalTextMap.set(input as any, input.placeholder);
@@ -112,7 +155,7 @@ class DOMChaosEngine {
     );
 
     for (const container of Array.from(listContainers)) {
-      if (container.closest('#dev-chaos-apitrace-root')) continue;
+      if (this.isExtensionElement(container)) continue;
       if (this.snapshot.emptiedContainers.has(container)) continue;
 
       const children = Array.from(container.childNodes);
@@ -138,7 +181,7 @@ class DOMChaosEngine {
     const images = document.querySelectorAll<HTMLImageElement>('img, [role="img"]');
 
     for (const img of Array.from(images)) {
-      if (img.closest('#dev-chaos-apitrace-root')) continue;
+      if (this.isExtensionElement(img)) continue;
 
       if (!this.snapshot.originalImgMap.has(img)) {
         this.snapshot.originalImgMap.set(img, {
@@ -216,9 +259,16 @@ class DOMChaosEngine {
   /**
    * Interactive Element Picker: Allows user to click any specific element to test.
    */
-  public startElementPicker(onPicked: (el: HTMLElement) => void): void {
+  public startElementPicker(
+    onPicked: (el: HTMLElement) => void,
+    onCancel?: () => void
+  ): void {
+    // If already active, clean up previous listeners first
+    this.stopElementPicker();
+
     this.pickerActive = true;
     this.onElementPickedCallback = onPicked;
+    this.onElementPickerCancelCallback = onCancel || null;
 
     if (!this.pickerHoverOverlay) {
       this.pickerHoverOverlay = document.createElement('div');
@@ -234,8 +284,15 @@ class DOMChaosEngine {
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!this.pickerActive) return;
+
+      // Ignore mouse move if cursor is over extension UI (drawer, dock, etc.)
+      if (this.isExtensionEvent(e)) {
+        if (this.pickerHoverOverlay) this.pickerHoverOverlay.style.display = 'none';
+        return;
+      }
+
       const target = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
-      if (!target || target.closest('#dev-chaos-apitrace-root')) {
+      if (!target || this.isExtensionElement(target)) {
         if (this.pickerHoverOverlay) this.pickerHoverOverlay.style.display = 'none';
         return;
       }
@@ -252,20 +309,33 @@ class DOMChaosEngine {
 
     const handleClick = (e: MouseEvent) => {
       if (!this.pickerActive) return;
+
+      // If clicked inside the extension UI (drawer, dock, or buttons), do not pick or intercept
+      if (this.isExtensionEvent(e)) {
+        return;
+      }
+
+      const target = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
+      if (!target || this.isExtensionElement(target)) {
+        return;
+      }
+
       e.preventDefault();
       e.stopPropagation();
 
-      const target = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
+      const callback = this.onElementPickedCallback;
       this.stopElementPicker();
 
-      if (target && !target.closest('#dev-chaos-apitrace-root') && this.onElementPickedCallback) {
-        this.onElementPickedCallback(target);
+      if (callback) {
+        callback(target);
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        const cancelCb = this.onElementPickerCancelCallback;
         this.stopElementPicker();
+        cancelCb?.();
       }
     };
 
@@ -281,6 +351,8 @@ class DOMChaosEngine {
       window.removeEventListener('mousemove', handleMouseMove, true);
       window.removeEventListener('click', handleClick, true);
       window.removeEventListener('keydown', handleKeyDown, true);
+      this.onElementPickedCallback = null;
+      this.onElementPickerCancelCallback = null;
     };
   }
 
