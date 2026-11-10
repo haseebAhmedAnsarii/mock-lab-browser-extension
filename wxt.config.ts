@@ -11,11 +11,21 @@ export default defineConfig({
       'storage',
       'activeTab',
       'declarativeNetRequest',
+      'declarativeNetRequestFeedback',
       'scripting'
     ],
     host_permissions: ['<all_urls>'],
     action: {
       default_title: 'Dev Mock & APITrace'
+    },
+    commands: {
+      'toggle-slideout': {
+        suggested_key: {
+          default: 'Alt+Shift+X',
+          mac: 'Alt+Shift+X',
+        },
+        description: 'Toggle the Dev Mock & APITrace slide-out drawer on active tab',
+      },
     },
     web_accessible_resources: [
       {
@@ -25,4 +35,3 @@ export default defineConfig({
     ]
   }
 });
-
