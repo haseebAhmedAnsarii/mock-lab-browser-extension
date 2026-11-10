@@ -197,7 +197,7 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
           </div>
           <span className="text-xs font-bold text-app-text">Broken Image Tester</span>
           <span className="text-[11px] text-app-muted mt-0.5">
-            Triggers onerror to test fallback avatars &amp; icons
+            Triggers onerror to test fallback avatars &amp; image placeholders
           </span>
         </button>
       </div>
