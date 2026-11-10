@@ -7,6 +7,7 @@ import {
   EyeOff,
   ImageOff,
   Type,
+  X,
 } from 'lucide-react';
 import { CHAOS_PRESETS } from '../utils/chaos-presets';
 import { TextStressPreset, TextStressPresetCategory } from '../utils/types';
@@ -75,26 +76,33 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
     onNotify?.(`Injected custom stress text into ${count} nodes`);
   };
 
-  const handleStartPicker = () => {
-    setIsPickingElement(true);
-    domChaos.startElementPicker(
-      (el) => {
-        setIsPickingElement(false);
-        setPickedElement(el);
-        const tag = el.tagName.toLowerCase();
-        const idOrClass = el.id ? `#${el.id}` : el.className ? `.${el.className.split(' ')[0]}` : '';
-        onNotify?.(`Target locked: <${tag}${idOrClass}>. Pick a stress preset below.`);
-      },
-      () => {
-        setIsPickingElement(false);
-      }
-    );
+  const handleTogglePicker = () => {
+    if (isPickingElement) {
+      domChaos.stopElementPicker();
+      setIsPickingElement(false);
+      onNotify?.('Cancelled element picking.');
+    } else {
+      setIsPickingElement(true);
+      domChaos.startElementPicker(
+        (el) => {
+          setIsPickingElement(false);
+          setPickedElement(el);
+          const tag = el.tagName.toLowerCase();
+          const idOrClass = el.id ? `#${el.id}` : el.className ? `.${el.className.split(' ')[0]}` : '';
+          onNotify?.(`Target locked: <${tag}${idOrClass}>. Pick a stress preset below.`);
+        },
+        () => {
+          setIsPickingElement(false);
+        }
+      );
+    }
   };
 
-  const handleCancelPicker = () => {
+  const handleClearPickedElement = () => {
     domChaos.stopElementPicker();
     setIsPickingElement(false);
     setPickedElement(null);
+    onNotify?.('Cleared specific element. Resumed scope mode.');
   };
 
   const handleSimulateEmptyLists = () => {
@@ -196,37 +204,47 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
 
       {/* Target Selector & Interactive Element Picker */}
       <div className="p-3.5 bg-app-surface rounded-lg border border-app-border space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-1.5">
             <Type className="w-4 h-4 text-app-primary" />
             <h4 className="text-xs font-bold text-app-text">Target Injection Scope</h4>
           </div>
 
-          {pickedElement ? (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-app-elevated text-app-text border border-app-border">
-                Target: &lt;{pickedElement.tagName.toLowerCase()}&gt;
-              </span>
-              <button
-                onClick={handleCancelPicker}
-                className="text-[11px] text-app-danger hover:underline"
-              >
-                Clear
-              </button>
-            </div>
-          ) : (
+          <div className="flex items-center gap-2">
+            {pickedElement && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-app-elevated border border-app-border text-[11px] font-mono">
+                <span className="text-app-text font-semibold">
+                  &lt;{pickedElement.tagName.toLowerCase()}{pickedElement.id ? `#${pickedElement.id}` : ''}&gt;
+                </span>
+                <button
+                  onClick={handleClearPickedElement}
+                  className="text-app-muted hover:text-app-danger transition-colors ml-0.5"
+                  title="Clear picked element"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+
             <button
-              onClick={handleStartPicker}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-colors border ${
+              onClick={handleTogglePicker}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all border ${
                 isPickingElement
-                  ? 'bg-app-primary text-white border-app-primary'
-                  : 'bg-app-elevated hover:bg-app-border text-app-text border-app-border'
+                  ? 'bg-app-primary text-white border-app-primary ring-1 ring-app-primary/50'
+                  : 'bg-app-elevated hover:bg-app-surface text-app-text border-app-border'
               }`}
+              title={isPickingElement ? 'Click to cancel element picker' : 'Click to pick an element on the page'}
             >
-              <MousePointer className="w-3.5 h-3.5" />
-              <span>{isPickingElement ? 'Click Element on Page...' : 'Pick Specific Element'}</span>
+              <MousePointer className={`w-3.5 h-3.5 ${isPickingElement ? 'animate-pulse' : ''}`} />
+              <span>
+                {isPickingElement
+                  ? 'Cancel Picking'
+                  : pickedElement
+                  ? 'Change Target'
+                  : 'Pick Specific Element'}
+              </span>
             </button>
-          )}
+          </div>
         </div>
 
         {/* Scope selector buttons */}
