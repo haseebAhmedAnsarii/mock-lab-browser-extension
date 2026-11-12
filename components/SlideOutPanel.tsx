@@ -51,6 +51,13 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isFullWidth, setIsFullWidth] = useState(false);
 
+  // APITrace filter state — lifted here so it survives tab switches
+  const [traceSearch, setTraceSearch] = useState('');
+  const [traceMethod, setTraceMethod] = useState<string>('ALL');
+  const [traceStatus, setTraceStatus] = useState<'ALL' | '2xx' | '4xx' | '5xx' | 'ERR'>('ALL');
+  const [traceType, setTraceType] = useState<'ALL' | 'fetch' | 'xhr'>('ALL');
+  const [traceOnlySlow, setTraceOnlySlow] = useState(false);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
   };
@@ -226,6 +233,16 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
                 onClearRequests={onClearRequests}
                 onReplayRequest={onReplayRequest}
                 onNotify={showToast}
+                searchQuery={traceSearch}
+                setSearchQuery={setTraceSearch}
+                selectedMethod={traceMethod}
+                setSelectedMethod={setTraceMethod}
+                statusFilter={traceStatus}
+                setStatusFilter={setTraceStatus}
+                typeFilter={traceType}
+                setTypeFilter={setTraceType}
+                onlySlow={traceOnlySlow}
+                setOnlySlow={setTraceOnlySlow}
               />
             )}
           </div>

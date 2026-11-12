@@ -20,6 +20,17 @@ interface ApiTraceTabProps {
   onClearRequests: () => void;
   onReplayRequest?: (req: CapturedRequest) => void;
   onNotify?: (msg: string) => void;
+  // Filter state lifted to parent so it survives tab switches
+  searchQuery: string;
+  setSearchQuery: (v: string) => void;
+  selectedMethod: string;
+  setSelectedMethod: (v: string) => void;
+  statusFilter: 'ALL' | '2xx' | '4xx' | '5xx' | 'ERR';
+  setStatusFilter: (v: 'ALL' | '2xx' | '4xx' | '5xx' | 'ERR') => void;
+  typeFilter: 'ALL' | 'fetch' | 'xhr';
+  setTypeFilter: (v: 'ALL' | 'fetch' | 'xhr') => void;
+  onlySlow: boolean;
+  setOnlySlow: (v: boolean) => void;
 }
 
 export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
@@ -29,12 +40,17 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
   onClearRequests,
   onReplayRequest,
   onNotify,
+  searchQuery,
+  setSearchQuery,
+  selectedMethod,
+  setSelectedMethod,
+  statusFilter,
+  setStatusFilter,
+  typeFilter,
+  setTypeFilter,
+  onlySlow,
+  setOnlySlow,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMethod, setSelectedMethod] = useState<string>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | '2xx' | '4xx' | '5xx' | 'ERR'>('ALL');
-  const [typeFilter, setTypeFilter] = useState<'ALL' | 'fetch' | 'xhr'>('ALL');
-  const [onlySlow, setOnlySlow] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
 
   // Filter requests
