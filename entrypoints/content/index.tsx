@@ -1,6 +1,6 @@
 import { defineContentScript } from 'wxt/utils/define-content-script';
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { SlideOutPanel } from '../../components/SlideOutPanel';
 import { CapturedRequest, LatencyRule } from '../../utils/types';
@@ -9,6 +9,13 @@ import './style.css';
 
 // Default latency rules
 const DEFAULT_RULES: LatencyRule[] = [
+  {
+    id: 'default_users_throttle',
+    name: 'Slow Users Endpoint (*users*)',
+    urlPattern: '*users*',
+    delayMs: 1500,
+    enabled: false,
+  },
   {
     id: 'default_api_throttle',
     name: 'Slow Mock API (/api/*)',
@@ -56,10 +63,7 @@ export default defineContentScript({
   cssInjectionMode: 'ui',
 
   async main(ctx) {
-    // 1. Inject the page-world interceptor for fetch and XHR
-    injectPageScript();
-
-    // 2. Mount Shadow DOM UI
+    // Mount Shadow DOM UI
     const ui = await createShadowRootUi(ctx, {
       name: 'dev-chaos-apitrace-root',
       position: 'overlay',
@@ -79,47 +83,32 @@ export default defineContentScript({
   },
 });
 
-function injectPageScript() {
-  if (!isExtensionValid()) return;
-  try {
-    const script = document.createElement('script');
-    script.src = chrome.runtime.getURL('injected.js');
-    script.async = false;
-    script.onload = () => script.remove();
-    (document.head || document.documentElement).appendChild(script);
-  } catch (err) {
-    // Extension might be reloading
-  }
-}
-
 const ContentApp: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [requests, setRequests] = useState<CapturedRequest[]>([]);
   const [rules, setRules] = useState<LatencyRule[]>(DEFAULT_RULES);
   const [isRecording, setIsRecording] = useState(true);
 
-  // Load persisted latency rules from Chrome storage safely
-  useEffect(() => {
-    if (!isExtensionValid()) return;
-    try {
-      chrome.storage.local.get(['chaos_latency_rules', 'chaos_panel_open'], (res) => {
-        if (!isExtensionValid()) return;
-        if (res?.chaos_latency_rules && Array.isArray(res.chaos_latency_rules)) {
-          setRules(res.chaos_latency_rules);
-          broadcastConfig(res.chaos_latency_rules, isRecording);
-        }
-        if (typeof res?.chaos_panel_open === 'boolean') {
-          setIsOpen(res.chaos_panel_open);
-        }
-      });
-    } catch {
-      // Ignore context invalidation
-    }
-  }, []);
+  const rulesRef = useRef(rules);
+  rulesRef.current = rules;
+  const isRecordingRef = useRef(isRecording);
+  isRecordingRef.current = isRecording;
 
   const broadcastConfig = (currentRules: LatencyRule[], recording: boolean) => {
     try {
-      window.dispatchEvent(
+      // 1. Post to page world via window.postMessage
+      window.postMessage(
+        {
+          source: 'DEV_MOCK_CONTENT',
+          type: 'UPDATE_CONFIG',
+          rules: currentRules,
+          monitoringEnabled: recording,
+        },
+        '*'
+      );
+
+      // 2. Dispatch to shared document as backup
+      document.dispatchEvent(
         new CustomEvent('__DEV_CHAOS_CONFIG_EVENT__', {
           detail: {
             rules: currentRules,
@@ -131,6 +120,28 @@ const ContentApp: React.FC = () => {
       // Ignore
     }
   };
+
+  // Load persisted latency rules from Chrome storage safely
+  useEffect(() => {
+    if (!isExtensionValid()) return;
+    try {
+      chrome.storage.local.get(['chaos_latency_rules', 'chaos_panel_open'], (res) => {
+        if (!isExtensionValid()) return;
+        if (res?.chaos_latency_rules && Array.isArray(res.chaos_latency_rules)) {
+          setRules(res.chaos_latency_rules);
+          broadcastConfig(res.chaos_latency_rules, isRecordingRef.current);
+        } else {
+          // Broadcast defaults if no storage exists
+          broadcastConfig(DEFAULT_RULES, isRecordingRef.current);
+        }
+        if (typeof res?.chaos_panel_open === 'boolean') {
+          setIsOpen(res.chaos_panel_open);
+        }
+      });
+    } catch {
+      // Ignore context invalidation
+    }
+  }, []);
 
   const handleUpdateRules = (updatedRules: LatencyRule[]) => {
     setRules(updatedRules);
@@ -155,28 +166,42 @@ const ContentApp: React.FC = () => {
     safeStorageSet({ chaos_panel_open: next });
   };
 
-  // Listen to intercepted API traffic from injected script
+  const handleCapturedRequest = useCallback((requestData: CapturedRequest) => {
+    if (!isRecordingRef.current) return;
+    if (!requestData || !requestData.id) return;
+
+    setRequests((prev) => {
+      // Deduplicate: ignore if this exact request ID is already captured
+      if (prev.some((r) => r.id === requestData.id)) {
+        return prev;
+      }
+      // Limit to 500 requests
+      return [requestData, ...prev.slice(0, 499)];
+    });
+
+    // Update background badge safely
+    safeSendMessage({ type: 'REQUEST_CAPTURED', request: requestData });
+  }, []);
+
+  // Listen to intercepted API traffic and ready signals from injected script
   useEffect(() => {
-    const handleTraceEvent = (event: any) => {
-      if (!isRecording) return;
-      const requestData: CapturedRequest = event.detail;
-      if (!requestData) return;
-
-      setRequests((prev) => {
-        // Limit to 500 requests
-        const next = [requestData, ...prev.slice(0, 499)];
-        return next;
-      });
-
-      // Update background badge safely
-      safeSendMessage({ type: 'REQUEST_CAPTURED', request: requestData });
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.source === 'DEV_MOCK_INJECTED') {
+        if (event.data.type === 'READY') {
+          // Injected script announced it is ready; reply immediately with latest rules!
+          broadcastConfig(rulesRef.current, isRecordingRef.current);
+        } else if (event.data.type === 'API_TRACE' && event.data.payload) {
+          handleCapturedRequest(event.data.payload);
+        }
+      }
     };
 
-    window.addEventListener('__DEV_CHAOS_API_TRACE__', handleTraceEvent);
+    window.addEventListener('message', handleMessage);
+
     return () => {
-      window.removeEventListener('__DEV_CHAOS_API_TRACE__', handleTraceEvent);
+      window.removeEventListener('message', handleMessage);
     };
-  }, [isRecording]);
+  }, [handleCapturedRequest]);
 
   // Listen for messages from popup
   useEffect(() => {

@@ -123,18 +123,18 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
           <button
             onClick={() =>
               handleQuickPreset({
-                name: 'Slow All APIs (+2000ms)',
-                pattern: '*/api/*',
+                name: 'Slow Users API (+2000ms)',
+                pattern: '*users*',
                 delay: 2000,
               })
             }
             className="p-2.5 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all text-xs"
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-app-text">All APIs Delay</span>
+              <span className="font-bold text-app-text">Users API Delay</span>
               <span className="text-[10px] font-mono text-app-warning font-bold">+2000ms</span>
             </div>
-            <p className="text-[11px] text-app-muted font-mono">*/api/*</p>
+            <p className="text-[11px] text-app-muted font-mono">*users*</p>
           </button>
 
           <button

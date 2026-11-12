@@ -274,7 +274,8 @@
           }
         });
         const data = await res.json();
-        log(`fetch /api/users completed with ${res.status}: ${data.length} users received`);
+        const detail = Array.isArray(data) ? `${data.length} users received` : JSON.stringify(data);
+        log(`fetch /api/users completed with ${res.status}: ${detail}`);
       } catch (err) {
         log(`fetch /api/users failed: ${err.message}`);
       }

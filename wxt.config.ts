@@ -29,7 +29,7 @@ export default defineConfig({
     },
     web_accessible_resources: [
       {
-        resources: ['injected.js'],
+        resources: ['content-scripts/injected.js'],
         matches: ['<all_urls>']
       }
     ]
