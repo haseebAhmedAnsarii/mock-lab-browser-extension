@@ -16,20 +16,70 @@
   box-sizing: border-box;
 }
 
-::-webkit-scrollbar {
-  width: 5px;
+/* Custom modern scrollbars across the entire extension UI - no browser default arrows */
+::-webkit-scrollbar,
+div::-webkit-scrollbar {
+  width: 6px;
   height: 5px;
 }
 
-::-webkit-scrollbar-track {
-  background: #141413;
+::-webkit-scrollbar-button,
+div::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #302f2c;
-  border-radius: 4px;
+::-webkit-scrollbar-corner,
+div::-webkit-scrollbar-corner {
+  background: transparent !important;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #484642;
+::-webkit-scrollbar-track,
+div::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb,
+div::-webkit-scrollbar-thumb {
+  background: #524f4a;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+}
+
+::-webkit-scrollbar-thumb:hover,
+div::-webkit-scrollbar-thumb:hover {
+  background: #787570;
+}
+
+/* Custom sleek pill scrollbar for drawer tabs */
+.dm-drawer-tabs-list::-webkit-scrollbar {
+  height: 5px !important;
+}
+
+.dm-drawer-tabs-list::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.dm-drawer-tabs-list::-webkit-scrollbar-track {
+  background: #282725 !important;
+  border-radius: 9999px !important;
+  margin: 0 4px !important;
+}
+
+.dm-drawer-tabs-list::-webkit-scrollbar-thumb {
+  background: #787570 !important;
+  border-radius: 9999px !important;
+  border: none !important;
+}
+
+.dm-drawer-tabs-list::-webkit-scrollbar-thumb:hover {
+  background: #d97706 !important;
+}
+
+.dm-drawer-tabs-list::-webkit-scrollbar-corner {
+  background: transparent !important;
 }

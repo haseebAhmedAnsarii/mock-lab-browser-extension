@@ -81,6 +81,34 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
 
   return (
     <div className="dm-drawer-root flex flex-col h-full bg-app-surface border-l border-app-border text-app-text shadow-2xl animate-in slide-in-from-right duration-150">
+      {/* Scoped Scrollbar Styling to prevent browser default arrows and enforce pill style */}
+      <style>{`
+        .dm-drawer-tabs-list::-webkit-scrollbar {
+          height: 5px !important;
+        }
+        .dm-drawer-tabs-list::-webkit-scrollbar-button {
+          display: none !important;
+          width: 0 !important;
+          height: 0 !important;
+        }
+        .dm-drawer-tabs-list::-webkit-scrollbar-track {
+          background: #282725 !important;
+          border-radius: 9999px !important;
+          margin: 0 4px !important;
+        }
+        .dm-drawer-tabs-list::-webkit-scrollbar-thumb {
+          background: #787570 !important;
+          border-radius: 9999px !important;
+          border: none !important;
+        }
+        .dm-drawer-tabs-list::-webkit-scrollbar-thumb:hover {
+          background: #d97706 !important;
+        }
+        .dm-drawer-tabs-list::-webkit-scrollbar-corner {
+          background: transparent !important;
+        }
+      `}</style>
+
       {/* Top Header */}
       <div className="dm-drawer-header p-4 border-b border-app-border bg-app-bg flex items-start justify-between gap-3">
         <div className="dm-drawer-header-meta flex-1 min-w-0">
@@ -133,11 +161,11 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
       </div>
 
       {/* Tabs and Actions Bar */}
-      <div className="dm-drawer-tabs-bar flex items-center justify-between px-3 py-1.5 border-b border-app-border bg-app-surface text-xs">
-        <div className="dm-drawer-tabs-list flex items-center gap-1 overflow-x-auto">
+      <div className="dm-drawer-tabs-bar flex items-center justify-between px-3 pt-2 pb-1 border-b border-app-border bg-app-surface text-xs">
+        <div className="dm-drawer-tabs-list flex items-center gap-1.5 overflow-x-auto min-w-0 flex-1 pb-2 pt-0.5 mr-2">
           <button
             onClick={() => setActiveTab('response')}
-            className={`dm-drawer-tab-btn px-3 py-1 rounded font-medium transition-colors border ${
+            className={`dm-drawer-tab-btn shrink-0 whitespace-nowrap px-3 py-1 rounded font-medium transition-colors border ${
               activeTab === 'response'
                 ? 'bg-app-text text-app-bg border-app-text font-bold'
                 : 'text-app-muted border-transparent hover:text-app-text'
@@ -147,7 +175,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('request')}
-            className={`dm-drawer-tab-btn px-3 py-1 rounded font-medium transition-colors border ${
+            className={`dm-drawer-tab-btn shrink-0 whitespace-nowrap px-3 py-1 rounded font-medium transition-colors border ${
               activeTab === 'request'
                 ? 'bg-app-text text-app-bg border-app-text font-bold'
                 : 'text-app-muted border-transparent hover:text-app-text'
@@ -157,7 +185,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('headers')}
-            className={`dm-drawer-tab-btn px-3 py-1 rounded font-medium transition-colors border ${
+            className={`dm-drawer-tab-btn shrink-0 whitespace-nowrap px-3 py-1 rounded font-medium transition-colors border ${
               activeTab === 'headers'
                 ? 'bg-app-text text-app-bg border-app-text font-bold'
                 : 'text-app-muted border-transparent hover:text-app-text'
@@ -167,7 +195,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('typescript')}
-            className={`dm-drawer-tab-btn flex items-center gap-1.5 px-3 py-1 rounded font-medium transition-colors border ${
+            className={`dm-drawer-tab-btn shrink-0 whitespace-nowrap flex items-center gap-1.5 px-3 py-1 rounded font-medium transition-colors border ${
               activeTab === 'typescript'
                 ? 'bg-app-primary text-white border-app-primary font-bold'
                 : 'text-app-primary border-transparent hover:bg-app-elevated'
@@ -178,7 +206,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('curl')}
-            className={`dm-drawer-tab-btn px-3 py-1 rounded font-medium transition-colors border ${
+            className={`dm-drawer-tab-btn shrink-0 whitespace-nowrap px-3 py-1 rounded font-medium transition-colors border ${
               activeTab === 'curl'
                 ? 'bg-app-text text-app-bg border-app-text font-bold'
                 : 'text-app-muted border-transparent hover:text-app-text'
