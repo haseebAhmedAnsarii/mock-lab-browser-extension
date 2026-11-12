@@ -32,6 +32,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('response');
   const [copiedCurl, setCopiedCurl] = useState(false);
   const [maskSensitive, setMaskSensitive] = useState(true);
+  const [isReplaying, setIsReplaying] = useState(false);
 
   // Status color helpers (Solid flat badges)
   const getStatusBadge = () => {
@@ -232,12 +233,17 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
 
           {onReplay && (
             <button
-              onClick={() => onReplay(request)}
-              className="dm-drawer-replay-btn flex items-center gap-1 px-2.5 py-0.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border text-app-text transition-colors text-[11px] font-semibold"
-              title="Re-send this request"
+              onClick={() => {
+                setIsReplaying(true);
+                onReplay(request);
+                setTimeout(() => setIsReplaying(false), 800);
+              }}
+              disabled={isReplaying}
+              className="dm-drawer-replay-btn flex items-center gap-1 px-2.5 py-0.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border text-app-text disabled:opacity-60 transition-colors text-[11px] font-semibold"
+              title="Re-send this request from the page context"
             >
-              <RefreshCw className="w-3 h-3" />
-              <span>Replay</span>
+              <RefreshCw className={`w-3 h-3 ${isReplaying ? 'animate-spin text-app-primary' : ''}`} />
+              <span>{isReplaying ? 'Replaying...' : 'Replay'}</span>
             </button>
           )}
         </div>

@@ -23,16 +23,36 @@ export default defineContentScript({
       }
     }
 
-    // 1. Listen for rule/config updates via window.postMessage
+    // Helper to execute replay in page MAIN world context
+    function executeReplay(req: any) {
+      if (!req || !req.url) return;
+      try {
+        window.fetch(req.url, {
+          method: req.method || 'GET',
+          headers: req.headers,
+          body: ['POST', 'PUT', 'PATCH'].includes((req.method || '').toUpperCase()) ? req.body : undefined,
+        }).catch((err) => {
+          console.warn('[Dev Mock Injected] Replay fetch error:', err);
+        });
+      } catch (err) {
+        console.error('[Dev Mock Injected] Failed to replay fetch:', err);
+      }
+    }
+
+    // 1. Listen for rule/config updates and replay requests via window.postMessage
     window.addEventListener('message', (event) => {
-      if (event.data?.source === 'DEV_MOCK_CONTENT' && event.data?.type === 'UPDATE_CONFIG') {
-        updateConfig(event.data.rules, event.data.monitoringEnabled);
+      if (event.data?.source === 'DEV_MOCK_CONTENT') {
+        if (event.data.type === 'UPDATE_CONFIG') {
+          updateConfig(event.data.rules, event.data.monitoringEnabled);
+        } else if (event.data.type === 'REPLAY_REQUEST') {
+          executeReplay(event.data.request);
+        }
       }
     });
 
-    // 2. Also listen via document CustomEvent as redundant backup
+    // 2. Also listen via document CustomEvent as redundant backup for config updates
     document.addEventListener('__DEV_CHAOS_CONFIG_EVENT__', (event: any) => {
-      if (event.detail) {
+      if (event.detail && event.detail.rules) {
         updateConfig(event.detail.rules, event.detail.monitoringEnabled);
       }
     });

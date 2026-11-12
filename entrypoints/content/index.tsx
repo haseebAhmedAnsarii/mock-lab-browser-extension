@@ -287,14 +287,25 @@ const ContentApp: React.FC = () => {
     }
   }, [isOpen, requests.length, rules]);
 
-  // Replay request
+  // Replay request via MAIN world bridge so it executes in the page context and triggers the fetch hook
   const handleReplayRequest = useCallback((req: CapturedRequest) => {
     try {
-      fetch(req.url, {
+      const payload = {
+        url: req.url,
         method: req.method,
         headers: req.requestHeaders,
         body: ['POST', 'PUT', 'PATCH'].includes(req.method.toUpperCase()) ? req.requestBody : undefined,
-      }).catch((err) => console.warn('[Dev Mock] Replay failed:', err));
+      };
+
+      // Single communication channel via window.postMessage
+      window.postMessage(
+        {
+          source: 'DEV_MOCK_CONTENT',
+          type: 'REPLAY_REQUEST',
+          request: payload,
+        },
+        '*'
+      );
     } catch (e) {
       console.error('[Dev Mock] Failed to initiate replay:', e);
     }

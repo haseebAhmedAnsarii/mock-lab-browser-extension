@@ -396,7 +396,10 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
             <RequestDetailDrawer
               request={selectedRequest}
               onClose={() => setSelectedRequestId(null)}
-              onReplay={onReplayRequest}
+              onReplay={(req) => {
+                onReplayRequest?.(req);
+                onNotify?.(`Replaying ${req.method} request...`);
+              }}
             />
           </div>
         )}
