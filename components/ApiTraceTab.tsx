@@ -52,6 +52,7 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
   setOnlySlow,
 }) => {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
 
   // Filter requests
   const filteredRequests = useMemo(() => {
@@ -162,14 +163,37 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
               <span className="dm-apitrace-record-label">{isRecording ? 'Recording' : 'Paused'}</span>
             </button>
 
-            <button
-              onClick={onClearRequests}
-              disabled={requests.length === 0}
-              className="dm-apitrace-clear-btn p-1.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border disabled:opacity-40 text-app-muted hover:text-app-danger transition-colors"
-              title="Clear all recorded requests"
-            >
-              <Trash2 className="dm-apitrace-clear-icon w-4 h-4" />
-            </button>
+            {confirmingClear ? (
+              <div className="dm-apitrace-clear-confirm-group flex items-center gap-1.5 px-2 py-1 bg-app-danger-muted border border-app-danger/40 rounded text-xs animate-in fade-in duration-100">
+                <span className="dm-apitrace-clear-confirm-prompt text-[11px] text-app-danger font-semibold">
+                  Clear all?
+                </span>
+                <button
+                  onClick={() => {
+                    onClearRequests();
+                    setConfirmingClear(false);
+                  }}
+                  className="dm-apitrace-clear-confirm-yes px-2 py-0.5 rounded text-[10px] font-bold bg-app-danger text-white hover:bg-app-danger/90 transition-colors"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setConfirmingClear(false)}
+                  className="dm-apitrace-clear-confirm-cancel px-1.5 py-0.5 rounded text-[10px] text-app-muted hover:text-app-text transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmingClear(true)}
+                disabled={requests.length === 0}
+                className="dm-apitrace-clear-btn p-1.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border disabled:opacity-40 text-app-muted hover:text-app-danger transition-colors"
+                title="Clear all recorded requests"
+              >
+                <Trash2 className="dm-apitrace-clear-icon w-4 h-4" />
+              </button>
+            )}
 
             <button
               onClick={handleExportHar}

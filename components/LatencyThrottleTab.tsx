@@ -25,6 +25,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
   const [newDelay, setNewDelay] = useState(1500);
   const [newMockStatus, setNewMockStatus] = useState<number>(0);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [deletingRuleId, setDeletingRuleId] = useState<string | null>(null);
 
   const handleToggleRule = (id: string) => {
     const next = rules.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r));
@@ -384,13 +385,36 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                 </div>
               </div>
 
-              <button
-                onClick={() => handleDeleteRule(rule.id)}
-                className="dm-latency-delete-btn p-1.5 rounded text-app-muted hover:text-app-danger hover:bg-app-elevated transition-colors shrink-0"
-                title="Delete rule"
-              >
-                <Trash2 className="dm-latency-delete-icon w-4 h-4" />
-              </button>
+              {deletingRuleId === rule.id ? (
+                <div className="dm-latency-delete-confirm-group flex items-center gap-1.5 px-2 py-1 bg-app-danger-muted border border-app-danger/40 rounded text-xs shrink-0 animate-in fade-in duration-100">
+                  <span className="dm-latency-delete-confirm-prompt text-[11px] text-app-danger font-semibold">
+                    Delete?
+                  </span>
+                  <button
+                    onClick={() => {
+                      handleDeleteRule(rule.id);
+                      setDeletingRuleId(null);
+                    }}
+                    className="dm-latency-delete-confirm-yes px-2 py-0.5 rounded text-[10px] font-bold bg-app-danger text-white hover:bg-app-danger/90 transition-colors"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setDeletingRuleId(null)}
+                    className="dm-latency-delete-confirm-cancel px-1.5 py-0.5 rounded text-[10px] text-app-muted hover:text-app-text transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setDeletingRuleId(rule.id)}
+                  className="dm-latency-delete-btn p-1.5 rounded text-app-muted hover:text-app-danger hover:bg-app-elevated transition-colors shrink-0"
+                  title="Delete rule"
+                >
+                  <Trash2 className="dm-latency-delete-icon w-4 h-4" />
+                </button>
+              )}
             </div>
           ))
         )}
