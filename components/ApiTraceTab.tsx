@@ -123,24 +123,24 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
   const methods = ['ALL', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-app-bg text-app-text">
+    <div className="dm-apitrace-root flex flex-col h-full overflow-hidden bg-app-bg text-app-text">
       {/* Top Toolbar (Solid Flat) */}
-      <div className="p-3 bg-app-surface border-b border-app-border space-y-2.5">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+      <div className="dm-apitrace-toolbar p-3 bg-app-surface border-b border-app-border space-y-2.5">
+        <div className="dm-apitrace-toolbar-row flex items-center justify-between gap-2 flex-wrap">
           {/* Search bar */}
-          <div className="relative flex-1 min-w-[180px]">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-app-muted" />
+          <div className="dm-apitrace-search-wrapper relative flex-1 min-w-[180px]">
+            <Search className="dm-apitrace-search-icon w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-app-muted" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Filter by URL, method, status, response..."
-              className="w-full pl-8 pr-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text placeholder-app-faint focus:outline-none focus:border-app-border-focus font-mono"
+              className="dm-apitrace-search-input w-full pl-8 pr-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text placeholder-app-faint focus:outline-none focus:border-app-border-focus font-mono"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-app-muted hover:text-app-text text-xs"
+                className="dm-apitrace-search-clear absolute right-2.5 top-1/2 -translate-y-1/2 text-app-muted hover:text-app-text text-xs"
               >
                 &times;
               </button>
@@ -148,59 +148,59 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-1.5">
+          <div className="dm-apitrace-action-btns flex items-center gap-1.5">
             <button
               onClick={onToggleRecording}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-semibold transition-colors border ${
+              className={`dm-apitrace-record-btn flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-semibold transition-colors border ${
                 isRecording
                   ? 'bg-app-danger-muted text-app-danger border-app-danger/40 hover:bg-app-danger/20'
                   : 'bg-app-success-muted text-app-success border-app-success/40 hover:bg-app-success/20'
               }`}
               title={isRecording ? 'Pause network recording' : 'Resume network recording'}
             >
-              {isRecording ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              <span>{isRecording ? 'Recording' : 'Paused'}</span>
+              {isRecording ? <Pause className="dm-apitrace-record-icon w-3.5 h-3.5" /> : <Play className="dm-apitrace-record-icon w-3.5 h-3.5" />}
+              <span className="dm-apitrace-record-label">{isRecording ? 'Recording' : 'Paused'}</span>
             </button>
 
             <button
               onClick={onClearRequests}
               disabled={requests.length === 0}
-              className="p-1.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border disabled:opacity-40 text-app-muted hover:text-app-danger transition-colors"
+              className="dm-apitrace-clear-btn p-1.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border disabled:opacity-40 text-app-muted hover:text-app-danger transition-colors"
               title="Clear all recorded requests"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="dm-apitrace-clear-icon w-4 h-4" />
             </button>
 
             <button
               onClick={handleExportHar}
               disabled={requests.length === 0}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border disabled:opacity-40 text-app-text transition-colors text-xs font-semibold"
+              className="dm-apitrace-export-har-btn flex items-center gap-1 px-2.5 py-1.5 rounded bg-app-bg hover:bg-app-elevated border border-app-border disabled:opacity-40 text-app-text transition-colors text-xs font-semibold"
               title="Export captured requests as HAR (Chrome DevTools compatible)"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>HAR</span>
+              <Download className="dm-apitrace-export-har-icon w-3.5 h-3.5" />
+              <span className="dm-apitrace-export-har-label">HAR</span>
             </button>
 
             <button
               onClick={handleExportJson}
               disabled={requests.length === 0}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-app-primary hover:bg-app-primary-hover disabled:opacity-40 text-white transition-colors text-xs font-semibold"
+              className="dm-apitrace-export-json-btn flex items-center gap-1 px-2.5 py-1.5 rounded bg-app-primary hover:bg-app-primary-hover disabled:opacity-40 text-white transition-colors text-xs font-semibold"
               title="Export captured requests as JSON"
             >
-              <span>JSON</span>
+              <span className="dm-apitrace-export-json-label">JSON</span>
             </button>
           </div>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center justify-between gap-2 overflow-x-auto text-xs pt-1">
+        <div className="dm-apitrace-filter-row flex items-center justify-between gap-2 overflow-x-auto text-xs pt-1">
           {/* Method filters */}
-          <div className="flex items-center gap-1">
+          <div className="dm-apitrace-method-filter-group flex items-center gap-1">
             {methods.map((m) => (
               <button
                 key={m}
                 onClick={() => setSelectedMethod(m)}
-                className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition-colors border ${
+                className={`dm-apitrace-method-filter-btn px-2 py-0.5 rounded text-[11px] font-mono font-bold transition-colors border ${
                   selectedMethod === m
                     ? 'bg-app-text text-app-bg border-app-text'
                     : 'bg-app-bg text-app-muted border-app-border hover:text-app-text'
@@ -212,10 +212,10 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
           </div>
 
           {/* Status & Timing filters */}
-          <div className="flex items-center gap-1">
+          <div className="dm-apitrace-status-filter-group flex items-center gap-1">
             <button
               onClick={() => setStatusFilter(statusFilter === '2xx' ? 'ALL' : '2xx')}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
+              className={`dm-apitrace-status-2xx-btn px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
                 statusFilter === '2xx'
                   ? 'bg-app-success text-white border-app-success'
                   : 'bg-app-bg text-app-muted border-app-border hover:text-app-success'
@@ -225,7 +225,7 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
             </button>
             <button
               onClick={() => setStatusFilter(statusFilter === '4xx' ? 'ALL' : '4xx')}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
+              className={`dm-apitrace-status-4xx-btn px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
                 statusFilter === '4xx'
                   ? 'bg-app-warning text-white border-app-warning'
                   : 'bg-app-bg text-app-muted border-app-border hover:text-app-warning'
@@ -235,7 +235,7 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
             </button>
             <button
               onClick={() => setStatusFilter(statusFilter === '5xx' ? 'ALL' : '5xx')}
-              className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
+              className={`dm-apitrace-status-5xx-btn px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
                 statusFilter === '5xx'
                   ? 'bg-app-danger text-white border-app-danger'
                   : 'bg-app-bg text-app-muted border-app-border hover:text-app-danger'
@@ -246,42 +246,42 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
 
             <button
               onClick={() => setOnlySlow(!onlySlow)}
-              className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
+              className={`dm-apitrace-slow-filter-btn flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold transition-colors border ${
                 onlySlow
                   ? 'bg-app-danger text-white border-app-danger'
                   : 'bg-app-bg text-app-muted border-app-border hover:text-app-danger'
               }`}
               title="Filter requests taking > 500ms"
             >
-              <Clock className="w-3 h-3" />
-              <span>Slow (&gt;500ms)</span>
+              <Clock className="dm-apitrace-slow-filter-icon w-3 h-3" />
+              <span className="dm-apitrace-slow-filter-label">Slow (&gt;500ms)</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main split view: list and details drawer */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="dm-apitrace-split-view flex-1 flex overflow-hidden relative">
         {/* Requests Table / List */}
         <div
-          className={`flex-1 flex flex-col overflow-y-auto ${
+          className={`dm-apitrace-request-list flex-1 flex flex-col overflow-y-auto ${
             selectedRequest ? 'hidden sm:flex sm:w-1/2 sm:border-r sm:border-app-border' : 'w-full'
           }`}
         >
           {filteredRequests.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-app-muted">
-              <Zap className="w-8 h-8 mb-2 opacity-40 text-app-primary" />
-              <p className="text-xs font-bold text-app-text">
+            <div className="dm-apitrace-empty-state flex-1 flex flex-col items-center justify-center p-8 text-center text-app-muted">
+              <Zap className="dm-apitrace-empty-icon w-8 h-8 mb-2 opacity-40 text-app-primary" />
+              <p className="dm-apitrace-empty-title text-xs font-bold text-app-text">
                 {requests.length === 0
                   ? 'Listening for Fetch & XHR network traffic...'
                   : 'No requests match your current filters.'}
               </p>
-              <p className="text-[11px] text-app-muted mt-1 max-w-xs">
+              <p className="dm-apitrace-empty-hint text-[11px] text-app-muted mt-1 max-w-xs">
                 Trigger an API call on the webpage to inspect request metadata.
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-app-border">
+            <div className="dm-apitrace-request-list-inner divide-y divide-app-border">
               {filteredRequests.map((req) => {
                 const isSelected = req.id === selectedRequestId;
                 const statusColor = getStatusColor(req.status);
@@ -299,39 +299,39 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
                   <div
                     key={req.id}
                     onClick={() => setSelectedRequestId(req.id)}
-                    className={`flex items-center justify-between gap-3 p-3 text-xs cursor-pointer transition-colors ${
+                    className={`dm-apitrace-request-row flex items-center justify-between gap-3 p-3 text-xs cursor-pointer transition-colors ${
                       isSelected
                         ? 'bg-app-elevated border-l-2 border-app-primary'
                         : 'hover:bg-app-surface'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="dm-apitrace-request-meta flex items-center gap-2.5 min-w-0 flex-1">
                       {/* Method Badge */}
                       <span
-                        className={`px-1.5 py-0.2 rounded text-[10px] font-bold font-mono border ${methodColor}`}
+                        className={`dm-apitrace-method-badge px-1.5 py-0.2 rounded text-[10px] font-bold font-mono border ${methodColor}`}
                       >
                         {req.method}
                       </span>
 
                       {/* Status Badge */}
                       <span
-                        className={`px-1.5 py-0.2 rounded text-[10px] font-bold font-mono border ${statusColor}`}
+                        className={`dm-apitrace-status-badge px-1.5 py-0.2 rounded text-[10px] font-bold font-mono border ${statusColor}`}
                       >
                         {req.status !== undefined && req.status > 0 ? req.status : 'ERR'}
                       </span>
 
                       {/* URL / Path */}
                       <span
-                        className="font-mono text-app-text truncate text-[11px]"
+                        className="dm-apitrace-url-path font-mono text-app-text truncate text-[11px]"
                         title={req.url}
                       >
                         {displayPath}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="dm-apitrace-request-timing flex items-center gap-2 shrink-0">
                       {req.wasThrottled && (
-                        <span className="text-[10px] font-mono text-app-warning" title="Throttled">
+                        <span className="dm-apitrace-throttle-indicator text-[10px] font-mono text-app-warning" title="Throttled">
                           ⏱️
                         </span>
                       )}
@@ -339,7 +339,7 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
                       {/* Duration */}
                       {req.duration !== undefined && (
                         <span
-                          className={`font-mono text-[11px] font-semibold ${
+                          className={`dm-apitrace-duration font-mono text-[11px] font-semibold ${
                             req.isSlow
                               ? 'text-app-danger font-bold'
                               : req.duration > 300
@@ -351,7 +351,7 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
                         </span>
                       )}
 
-                      <span className="text-[10px] text-app-faint font-mono">
+                      <span className="dm-apitrace-timestamp text-[10px] text-app-faint font-mono">
                         {new Date(req.startTime).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -368,7 +368,7 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
 
         {/* Selected Request Details Drawer */}
         {selectedRequest && (
-          <div className="w-full sm:w-1/2 h-full absolute sm:relative top-0 right-0 z-10 bg-app-surface">
+          <div className="dm-apitrace-detail-drawer w-full sm:w-1/2 h-full absolute sm:relative top-0 right-0 z-10 bg-app-surface">
             <RequestDetailDrawer
               request={selectedRequest}
               onClose={() => setSelectedRequestId(null)}
@@ -379,17 +379,17 @@ export const ApiTraceTab: React.FC<ApiTraceTabProps> = ({
       </div>
 
       {/* Footer Status Bar */}
-      <div className="px-3 py-1.5 bg-app-surface border-t border-app-border flex items-center justify-between text-[11px] text-app-muted font-mono">
-        <div className="flex items-center gap-3">
-          <span>{requests.length} requests captured</span>
+      <div className="dm-apitrace-footer px-3 py-1.5 bg-app-surface border-t border-app-border flex items-center justify-between text-[11px] text-app-muted font-mono">
+        <div className="dm-apitrace-footer-stats flex items-center gap-3">
+          <span className="dm-apitrace-total-count">{requests.length} requests captured</span>
           {filteredRequests.length !== requests.length && (
-            <span className="text-app-primary">({filteredRequests.length} matching)</span>
+            <span className="dm-apitrace-filtered-count text-app-primary">({filteredRequests.length} matching)</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-app-success inline-block" />
-            <span className="text-app-text font-sans font-medium">Hook Active</span>
+        <div className="dm-apitrace-footer-status flex items-center gap-2">
+          <span className="dm-apitrace-hook-status flex items-center gap-1.5">
+            <span className="dm-apitrace-hook-indicator w-1.5 h-1.5 rounded-full bg-app-success inline-block" />
+            <span className="dm-apitrace-hook-label text-app-text font-sans font-medium">Hook Active</span>
           </span>
         </div>
       </div>

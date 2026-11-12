@@ -34,28 +34,28 @@ export const TypeScriptViewer: React.FC<TypeScriptViewerProps> = ({
   const lines = tsCode.split('\n');
 
   return (
-    <div className="flex flex-col h-full bg-app-bg rounded border border-app-border overflow-hidden">
+    <div className="dm-ts-root flex flex-col h-full bg-app-bg rounded border border-app-border overflow-hidden">
       {/* Header toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-app-surface border-b border-app-border">
-        <div className="flex items-center gap-2">
-          <FileCode2 className="w-4 h-4 text-app-primary" />
-          <span className="text-xs font-bold text-app-text">TypeScript Generator</span>
-          <div className="flex items-center gap-1.5 ml-2">
-            <label className="text-[11px] text-app-muted">Root Name:</label>
+      <div className="dm-ts-toolbar flex flex-wrap items-center justify-between gap-2 p-3 bg-app-surface border-b border-app-border">
+        <div className="dm-ts-toolbar-left flex items-center gap-2">
+          <FileCode2 className="dm-ts-title-icon w-4 h-4 text-app-primary" />
+          <span className="dm-ts-title text-xs font-bold text-app-text">TypeScript Generator</span>
+          <div className="dm-ts-rootname-group flex items-center gap-1.5 ml-2">
+            <label className="dm-ts-rootname-label text-[11px] text-app-muted">Root Name:</label>
             <input
               type="text"
               value={rootName}
               onChange={(e) => setRootName(e.target.value)}
-              className="px-2 py-0.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus font-mono w-32"
+              className="dm-ts-rootname-input px-2 py-0.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus font-mono w-32"
               placeholder="ApiResponse"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="dm-ts-toolbar-right flex items-center gap-2">
           <button
             onClick={handleDownload}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-app-bg hover:bg-app-elevated border border-app-border text-app-text transition-colors font-medium"
+            className="dm-ts-download-btn flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-app-bg hover:bg-app-elevated border border-app-border text-app-text transition-colors font-medium"
             title="Download .d.ts definition file"
           >
             <Download className="w-3.5 h-3.5" />
@@ -63,7 +63,7 @@ export const TypeScriptViewer: React.FC<TypeScriptViewerProps> = ({
           </button>
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1 text-xs rounded font-semibold bg-app-primary hover:bg-app-primary-hover text-white transition-colors"
+            className="dm-ts-copy-btn flex items-center gap-1.5 px-3 py-1 text-xs rounded font-semibold bg-app-primary hover:bg-app-primary-hover text-white transition-colors"
           >
             {copied ? (
               <>
@@ -81,14 +81,14 @@ export const TypeScriptViewer: React.FC<TypeScriptViewerProps> = ({
       </div>
 
       {/* Code viewer with line numbers */}
-      <div className="flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed bg-app-bg">
-        <div className="table w-full">
+      <div className="dm-ts-code-view flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed bg-app-bg">
+        <div className="dm-ts-code-table table w-full">
           {lines.map((line, idx) => (
-            <div key={idx} className="table-row hover:bg-app-surface">
-              <span className="table-cell select-none text-right pr-4 text-app-faint w-8">
+            <div key={idx} className="dm-ts-code-row table-row hover:bg-app-surface">
+              <span className="dm-ts-line-number table-cell select-none text-right pr-4 text-app-faint w-8">
                 {idx + 1}
               </span>
-              <span className="table-cell whitespace-pre text-app-text">
+              <span className="dm-ts-line-code table-cell whitespace-pre text-app-text">
                 {formatTsLine(line)}
               </span>
             </div>

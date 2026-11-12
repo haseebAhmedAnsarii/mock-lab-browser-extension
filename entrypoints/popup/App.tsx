@@ -74,30 +74,30 @@ export default function App() {
     stats.domStats.textNodes + stats.domStats.images + stats.domStats.lists;
 
   return (
-    <div className="flex flex-col bg-app-bg text-app-text p-4 space-y-4 font-sans select-none">
+    <div className="dm-popup-root flex flex-col bg-app-bg text-app-text p-4 space-y-4 font-sans select-none">
       {/* Header (Solid Flat, No Gradients) */}
-      <div className="flex items-center justify-between pb-3 border-b border-app-border">
-        <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded flex items-center justify-center bg-app-primary text-white text-xs font-bold">
+      <div className="dm-popup-header flex items-center justify-between pb-3 border-b border-app-border">
+        <div className="dm-popup-header-brand flex items-center gap-2">
+          <span className="dm-popup-logo-icon w-6 h-6 rounded flex items-center justify-center bg-app-primary text-white text-xs font-bold">
             ⚡
           </span>
-          <div>
-            <h1 className="text-xs font-bold uppercase tracking-wider text-app-text">
+          <div className="dm-popup-title-group">
+            <h1 className="dm-popup-title text-xs font-bold uppercase tracking-wider text-app-text">
               Dev Mock &amp; Chaos
             </h1>
-            <p className="text-[10px] text-app-muted font-mono">APITrace v1.0.0</p>
+            <p className="dm-popup-subtitle text-[10px] text-app-muted font-mono">APITrace v1.0.0</p>
           </div>
         </div>
 
-        <span className="flex items-center gap-1.5 text-[10px] text-app-success bg-app-success-muted border border-app-success/40 px-2 py-0.5 rounded font-mono font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-app-success" />
-          Active
+        <span className="dm-popup-status-badge flex items-center gap-1.5 text-[10px] text-app-success bg-app-success-muted border border-app-success/40 px-2 py-0.5 rounded font-mono font-bold">
+          <span className="dm-popup-status-dot w-1.5 h-1.5 rounded-full bg-app-success" />
+          <span className="dm-popup-status-label">Active</span>
         </span>
       </div>
 
       {/* Feedback Toast */}
       {statusMessage && (
-        <div className="p-2 bg-app-surface border border-app-border-focus rounded text-[11px] text-app-text text-center">
+        <div className="dm-popup-toast p-2 bg-app-surface border border-app-border-focus rounded text-[11px] text-app-text text-center">
           {statusMessage}
         </div>
       )}
@@ -105,84 +105,84 @@ export default function App() {
       {/* Big Launch Slide-Out Button (Solid High-Contrast, No Gradients) */}
       <button
         onClick={handleTogglePanel}
-        className="w-full py-2.5 px-3 bg-app-text hover:bg-white text-app-bg rounded text-xs font-bold flex items-center justify-between transition-colors shadow-sm"
+        className="dm-popup-launch-btn w-full py-2.5 px-3 bg-app-text hover:bg-white text-app-bg rounded text-xs font-bold flex items-center justify-between transition-colors shadow-sm"
       >
-        <span className="flex items-center gap-2">
-          <Layers className="w-4 h-4" />
-          <span>{stats.isOpen ? 'Close Slide-Out Drawer' : 'Launch In-Page Slide-Out'}</span>
+        <span className="dm-popup-launch-btn-label flex items-center gap-2">
+          <Layers className="dm-popup-launch-btn-icon w-4 h-4" />
+          <span className="dm-popup-launch-btn-text">{stats.isOpen ? 'Close Slide-Out Drawer' : 'Launch In-Page Slide-Out'}</span>
         </span>
-        <ChevronRight className="w-4 h-4" />
+        <ChevronRight className="dm-popup-launch-btn-chevron w-4 h-4" />
       </button>
 
       {/* Real-time stats */}
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="p-2.5 bg-app-surface border border-app-border rounded">
-          <span className="block text-base font-bold font-mono text-app-primary">
+      <div className="dm-popup-stats-grid grid grid-cols-3 gap-2 text-center">
+        <div className="dm-popup-stat-card dm-popup-stat-captured p-2.5 bg-app-surface border border-app-border rounded">
+          <span className="dm-popup-stat-value block text-base font-bold font-mono text-app-primary">
             {stats.requestCount}
           </span>
-          <span className="text-[10px] text-app-muted font-medium">Captured</span>
+          <span className="dm-popup-stat-label text-[10px] text-app-muted font-medium">Captured</span>
         </div>
 
-        <div className="p-2.5 bg-app-surface border border-app-border rounded">
-          <span className="block text-base font-bold font-mono text-app-warning">
+        <div className="dm-popup-stat-card dm-popup-stat-throttles p-2.5 bg-app-surface border border-app-border rounded">
+          <span className="dm-popup-stat-value block text-base font-bold font-mono text-app-warning">
             {stats.activeRulesCount}
           </span>
-          <span className="text-[10px] text-app-muted font-medium">Throttles</span>
+          <span className="dm-popup-stat-label text-[10px] text-app-muted font-medium">Throttles</span>
         </div>
 
-        <div className="p-2.5 bg-app-surface border border-app-border rounded">
-          <span className="block text-base font-bold font-mono text-app-danger">
+        <div className="dm-popup-stat-card dm-popup-stat-chaos p-2.5 bg-app-surface border border-app-border rounded">
+          <span className="dm-popup-stat-value block text-base font-bold font-mono text-app-danger">
             {totalModifications}
           </span>
-          <span className="text-[10px] text-app-muted font-medium">DOM Chaos</span>
+          <span className="dm-popup-stat-label text-[10px] text-app-muted font-medium">DOM Chaos</span>
         </div>
       </div>
 
       {/* Quick Chaos Actions */}
-      <div className="space-y-2">
-        <span className="text-[10px] font-bold text-app-muted uppercase tracking-wider block">
+      <div className="dm-popup-chaos-section space-y-2">
+        <span className="dm-popup-chaos-heading text-[10px] font-bold text-app-muted uppercase tracking-wider block">
           One-Click Stress Actions
         </span>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="dm-popup-chaos-actions-grid grid grid-cols-2 gap-2">
           <button
             onClick={handleSimulateEmptyLists}
-            className="flex items-center gap-2 p-2 bg-app-surface hover:bg-app-elevated border border-app-border rounded text-left transition-colors text-xs text-app-text"
+            className="dm-popup-chaos-empty-btn flex items-center gap-2 p-2 bg-app-surface hover:bg-app-elevated border border-app-border rounded text-left transition-colors text-xs text-app-text"
           >
-            <EyeOff className="w-3.5 h-3.5 text-app-warning shrink-0" />
-            <span className="truncate">Empty Lists</span>
+            <EyeOff className="dm-popup-chaos-empty-icon w-3.5 h-3.5 text-app-warning shrink-0" />
+            <span className="dm-popup-chaos-empty-label truncate">Empty Lists</span>
           </button>
 
           <button
             onClick={handleSimulateBrokenImages}
-            className="flex items-center gap-2 p-2 bg-app-surface hover:bg-app-elevated border border-app-border rounded text-left transition-colors text-xs text-app-text"
+            className="dm-popup-chaos-broken-btn flex items-center gap-2 p-2 bg-app-surface hover:bg-app-elevated border border-app-border rounded text-left transition-colors text-xs text-app-text"
           >
-            <ImageOff className="w-3.5 h-3.5 text-app-danger shrink-0" />
-            <span className="truncate">Break Images</span>
+            <ImageOff className="dm-popup-chaos-broken-icon w-3.5 h-3.5 text-app-danger shrink-0" />
+            <span className="dm-popup-chaos-broken-label truncate">Break Images</span>
           </button>
         </div>
 
         <button
           onClick={handleRevertAll}
           disabled={totalModifications === 0}
-          className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-bold border transition-all ${
+          className={`dm-popup-revert-btn w-full flex items-center justify-center gap-1.5 py-1.5 rounded text-xs font-bold border transition-all ${
             totalModifications > 0
               ? 'bg-app-danger-muted text-app-danger border-app-danger/40 hover:bg-app-danger/20'
               : 'bg-app-surface text-app-faint border-app-border cursor-not-allowed'
           }`}
         >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Restore Original DOM ({totalModifications})</span>
+          <RotateCcw className="dm-popup-revert-icon w-3.5 h-3.5" />
+          <span className="dm-popup-revert-label">Restore Original DOM ({totalModifications})</span>
         </button>
       </div>
 
       {/* Security & Privacy Footer */}
-      <div className="pt-2 border-t border-app-border flex items-center justify-between text-[10px] text-app-muted">
-        <span className="flex items-center gap-1">
-          <ShieldCheck className="w-3 h-3 text-app-success" />
-          <span>Bearer/Cookie Masking Active</span>
+      <div className="dm-popup-footer pt-2 border-t border-app-border flex items-center justify-between text-[10px] text-app-muted">
+        <span className="dm-popup-privacy-status flex items-center gap-1">
+          <ShieldCheck className="dm-popup-privacy-icon w-3 h-3 text-app-success" />
+          <span className="dm-popup-privacy-label">Bearer/Cookie Masking Active</span>
         </span>
-        <span className="font-mono">MV3</span>
+        <span className="dm-popup-mv3-badge font-mono">MV3</span>
       </div>
     </div>
   );

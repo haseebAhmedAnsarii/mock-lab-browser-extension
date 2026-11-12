@@ -133,17 +133,17 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
   const totalModifications = stats.textNodes + stats.images + stats.lists;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto space-y-4 p-4 text-app-text">
+    <div className="dm-chaos-root flex flex-col h-full overflow-y-auto space-y-4 p-4 text-app-text">
       {/* Top Banner (Solid Flat Background, No Gradients) */}
-      <div className="flex items-center justify-between p-3.5 bg-app-surface border border-app-border rounded-lg">
-        <div>
-          <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-app-danger" />
-            <h3 className="text-xs font-bold uppercase tracking-tight text-app-text">
+      <div className="dm-chaos-banner flex items-center justify-between p-3.5 bg-app-surface border border-app-border rounded-lg">
+        <div className="dm-chaos-banner-info">
+          <div className="dm-chaos-banner-title-row flex items-center gap-2">
+            <Flame className="dm-chaos-banner-icon w-4 h-4 text-app-danger" />
+            <h3 className="dm-chaos-banner-heading text-xs font-bold uppercase tracking-tight text-app-text">
               Dev Mock &amp; Chaos Palette
             </h3>
           </div>
-          <p className="text-xs text-app-muted mt-0.5">
+          <p className="dm-chaos-banner-description text-xs text-app-muted mt-0.5">
             Inject stress payloads, simulate empty fallbacks &amp; verify layout truncation.
           </p>
         </div>
@@ -151,92 +151,92 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
         <button
           onClick={handleRevertAll}
           disabled={totalModifications === 0}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-all border ${
+          className={`dm-chaos-restore-btn flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-all border ${
             totalModifications > 0
               ? 'bg-app-danger text-white border-app-danger hover:opacity-90'
               : 'bg-app-elevated text-app-faint border-app-border cursor-not-allowed'
           }`}
           title="Reverts all DOM modifications back to their pristine state"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
-          <span>Restore Page ({totalModifications})</span>
+          <RotateCcw className="dm-chaos-restore-icon w-3.5 h-3.5" />
+          <span className="dm-chaos-restore-label">Restore Page ({totalModifications})</span>
         </button>
       </div>
 
       {/* Quick Chaos Simulation Actions (Solid Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div className="dm-chaos-actions-grid grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <button
           onClick={handleSimulateEmptyLists}
-          className="flex flex-col p-3 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all"
+          className="dm-chaos-empty-list-card flex flex-col p-3 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all"
         >
-          <div className="flex items-center justify-between w-full mb-1">
-            <span className="p-1.5 bg-app-warning-muted text-app-warning rounded">
-              <EyeOff className="w-4 h-4" />
+          <div className="dm-chaos-empty-list-header flex items-center justify-between w-full mb-1">
+            <span className="dm-chaos-empty-list-icon-wrap p-1.5 bg-app-warning-muted text-app-warning rounded">
+              <EyeOff className="dm-chaos-empty-list-icon w-4 h-4" />
             </span>
-            <span className="text-[11px] font-mono text-app-muted">
+            <span className="dm-chaos-empty-list-stat text-[11px] font-mono text-app-muted">
               {stats.lists > 0 ? `${stats.lists} emptied` : 'Ready'}
             </span>
           </div>
-          <span className="text-xs font-bold text-app-text">Empty List Simulator</span>
-          <span className="text-[11px] text-app-muted mt-0.5">
+          <span className="dm-chaos-empty-list-title text-xs font-bold text-app-text">Empty List Simulator</span>
+          <span className="dm-chaos-empty-list-desc text-[11px] text-app-muted mt-0.5">
             Wipes lists, tables &amp; grids to test empty state illustrations
           </span>
         </button>
 
         <button
           onClick={handleSimulateBrokenImages}
-          className="flex flex-col p-3 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all"
+          className="dm-chaos-broken-img-card flex flex-col p-3 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all"
         >
-          <div className="flex items-center justify-between w-full mb-1">
-            <span className="p-1.5 bg-app-danger-muted text-app-danger rounded">
-              <ImageOff className="w-4 h-4" />
+          <div className="dm-chaos-broken-img-header flex items-center justify-between w-full mb-1">
+            <span className="dm-chaos-broken-img-icon-wrap p-1.5 bg-app-danger-muted text-app-danger rounded">
+              <ImageOff className="dm-chaos-broken-img-icon w-4 h-4" />
             </span>
-            <span className="text-[11px] font-mono text-app-muted">
+            <span className="dm-chaos-broken-img-stat text-[11px] font-mono text-app-muted">
               {stats.images > 0 ? `${stats.images} broken` : 'Ready'}
             </span>
           </div>
-          <span className="text-xs font-bold text-app-text">Broken Image Tester</span>
-          <span className="text-[11px] text-app-muted mt-0.5">
+          <span className="dm-chaos-broken-img-title text-xs font-bold text-app-text">Broken Image Tester</span>
+          <span className="dm-chaos-broken-img-desc text-[11px] text-app-muted mt-0.5">
             Triggers onerror to test fallback avatars &amp; image placeholders
           </span>
         </button>
       </div>
 
       {/* Target Selector & Interactive Element Picker */}
-      <div className="p-3.5 bg-app-surface rounded-lg border border-app-border space-y-3">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Type className="w-4 h-4 text-app-primary" />
-            <h4 className="text-xs font-bold text-app-text">Target Injection Scope</h4>
+      <div className="dm-chaos-scope-section p-3.5 bg-app-surface rounded-lg border border-app-border space-y-3">
+        <div className="dm-chaos-scope-header flex items-center justify-between gap-2 flex-wrap">
+          <div className="dm-chaos-scope-title-row flex items-center gap-1.5">
+            <Type className="dm-chaos-scope-icon w-4 h-4 text-app-primary" />
+            <h4 className="dm-chaos-scope-heading text-xs font-bold text-app-text">Target Injection Scope</h4>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="dm-chaos-picker-controls flex items-center gap-2">
             {pickedElement && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-app-elevated border border-app-border text-[11px] font-mono">
-                <span className="text-app-text font-semibold">
+              <div className="dm-chaos-picked-badge flex items-center gap-1.5 px-2 py-0.5 rounded bg-app-elevated border border-app-border text-[11px] font-mono">
+                <span className="dm-chaos-picked-tag text-app-text font-semibold">
                   &lt;{pickedElement.tagName.toLowerCase()}{pickedElement.id ? `#${pickedElement.id}` : ''}&gt;
                 </span>
                 <button
                   onClick={handleClearPickedElement}
-                  className="text-app-muted hover:text-app-danger transition-colors ml-0.5"
+                  className="dm-chaos-clear-pick-btn text-app-muted hover:text-app-danger transition-colors ml-0.5"
                   title="Clear picked element"
                 >
-                  <X className="w-3 h-3" />
+                  <X className="dm-chaos-clear-pick-icon w-3 h-3" />
                 </button>
               </div>
             )}
 
             <button
               onClick={handleTogglePicker}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all border ${
+              className={`dm-chaos-picker-btn flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all border ${
                 isPickingElement
                   ? 'bg-app-primary text-white border-app-primary ring-1 ring-app-primary/50'
                   : 'bg-app-elevated hover:bg-app-surface text-app-text border-app-border'
               }`}
               title={isPickingElement ? 'Click to cancel element picker' : 'Click to pick an element on the page'}
             >
-              <MousePointer className={`w-3.5 h-3.5 ${isPickingElement ? 'animate-pulse' : ''}`} />
-              <span>
+              <MousePointer className={`dm-chaos-picker-icon w-3.5 h-3.5 ${isPickingElement ? 'animate-pulse' : ''}`} />
+              <span className="dm-chaos-picker-label">
                 {isPickingElement
                   ? 'Cancel Picking'
                   : pickedElement
@@ -249,7 +249,7 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
 
         {/* Scope selector buttons */}
         {!pickedElement && (
-          <div className="flex flex-wrap gap-1.5">
+          <div className="dm-chaos-scope-pills flex flex-wrap gap-1.5">
             {[
               { id: 'headings', label: 'Headings (h1-h6)' },
               { id: 'paragraphs', label: 'Paragraphs & Spans' },
@@ -260,7 +260,7 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
               <button
                 key={scope.id}
                 onClick={() => setTargetScope(scope.id as any)}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors border ${
+                className={`dm-chaos-scope-pill px-2.5 py-1 rounded text-xs font-medium transition-colors border ${
                   targetScope === scope.id
                     ? 'bg-app-text text-app-bg border-app-text font-bold'
                     : 'bg-app-bg text-app-muted border-app-border hover:text-app-text'
@@ -273,19 +273,19 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
         )}
 
         {/* Custom Text Input */}
-        <div className="flex gap-2 pt-2 border-t border-app-border">
+        <div className="dm-chaos-custom-input-row flex gap-2 pt-2 border-t border-app-border">
           <input
             type="text"
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
             placeholder="Type custom text to stress-test layout..."
-            className="flex-1 px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text placeholder-app-faint focus:outline-none focus:border-app-border-focus font-mono"
+            className="dm-chaos-custom-input flex-1 px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text placeholder-app-faint focus:outline-none focus:border-app-border-focus font-mono"
             onKeyDown={(e) => e.key === 'Enter' && handleApplyCustomText()}
           />
           <button
             onClick={handleApplyCustomText}
             disabled={!customText.trim()}
-            className="px-3 py-1.5 rounded text-xs font-semibold bg-app-primary hover:bg-app-primary-hover disabled:opacity-40 text-white transition-colors"
+            className="dm-chaos-custom-inject-btn px-3 py-1.5 rounded text-xs font-semibold bg-app-primary hover:bg-app-primary-hover disabled:opacity-40 text-white transition-colors"
           >
             Inject Custom
           </button>
@@ -293,25 +293,25 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
       </div>
 
       {/* Stress Presets Library */}
-      <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-app-warning" />
-            <h4 className="text-xs font-bold text-app-text">Stress Presets Library</h4>
+      <div className="dm-chaos-presets-section space-y-2.5">
+        <div className="dm-chaos-presets-header flex items-center justify-between">
+          <div className="dm-chaos-presets-title-row flex items-center gap-1.5">
+            <Sparkles className="dm-chaos-presets-icon w-4 h-4 text-app-warning" />
+            <h4 className="dm-chaos-presets-heading text-xs font-bold text-app-text">Stress Presets Library</h4>
           </div>
 
-          <span className="text-[11px] text-app-muted font-mono">
+          <span className="dm-chaos-presets-count text-[11px] text-app-muted font-mono">
             {filteredPresets.length} presets
           </span>
         </div>
 
         {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+        <div className="dm-chaos-category-pills flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-2.5 py-1 rounded whitespace-nowrap text-xs font-medium transition-colors border ${
+              className={`dm-chaos-category-pill px-2.5 py-1 rounded whitespace-nowrap text-xs font-medium transition-colors border ${
                 selectedCategory === cat.id
                   ? 'bg-app-primary text-white border-app-primary font-bold'
                   : 'bg-app-surface text-app-muted border-app-border hover:text-app-text'
@@ -323,32 +323,32 @@ export const ChaosPaletteTab: React.FC<ChaosPaletteTabProps> = ({ onNotify }) =>
         </div>
 
         {/* Presets Grid (Solid Flat Cards) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="dm-chaos-preset-grid grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {filteredPresets.map((preset) => (
             <div
               key={preset.id}
               onClick={() => handleApplyPreset(preset)}
-              className="p-3 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg cursor-pointer transition-all flex flex-col justify-between"
+              className="dm-chaos-preset-card p-3 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg cursor-pointer transition-all flex flex-col justify-between"
             >
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold text-app-text">
+              <div className="dm-chaos-preset-card-body">
+                <div className="dm-chaos-preset-card-header flex items-center justify-between mb-1">
+                  <span className="dm-chaos-preset-name text-xs font-bold text-app-text">
                     {preset.name}
                   </span>
-                  <span className="text-[10px] font-mono text-app-muted uppercase bg-app-bg px-1.5 py-0.5 rounded border border-app-border">
+                  <span className="dm-chaos-preset-char-count text-[10px] font-mono text-app-muted uppercase bg-app-bg px-1.5 py-0.5 rounded border border-app-border">
                     {preset.value.length} chars
                   </span>
                 </div>
-                <p className="text-[11px] text-app-muted line-clamp-2">
+                <p className="dm-chaos-preset-description text-[11px] text-app-muted line-clamp-2">
                   {preset.description}
                 </p>
               </div>
 
-              <div className="mt-2.5 pt-2 border-t border-app-border flex items-center justify-between">
-                <span className="font-mono text-[10px] text-app-faint truncate max-w-[200px]">
+              <div className="dm-chaos-preset-footer mt-2.5 pt-2 border-t border-app-border flex items-center justify-between">
+                <span className="dm-chaos-preset-preview font-mono text-[10px] text-app-faint truncate max-w-[200px]">
                   {preset.value.slice(0, 35)}...
                 </span>
-                <span className="text-[11px] font-bold text-app-primary flex items-center gap-0.5">
+                <span className="dm-chaos-preset-inject-label text-[11px] font-bold text-app-primary flex items-center gap-0.5">
                   Inject &rarr;
                 </span>
               </div>

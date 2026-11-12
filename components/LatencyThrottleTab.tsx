@@ -111,24 +111,24 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
   const activeCount = rules.filter((r) => r.enabled).length;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto space-y-4 p-4 text-app-text">
+    <div className="dm-latency-root flex flex-col h-full overflow-y-auto space-y-4 p-4 text-app-text">
       {/* Top Banner (Solid Flat Background, No Gradients) */}
-      <div className="flex items-center justify-between p-3.5 bg-app-surface border border-app-border rounded-lg">
-        <div>
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-app-warning" />
-            <h3 className="text-xs font-bold uppercase tracking-tight text-app-text">
+      <div className="dm-latency-banner flex items-center justify-between p-3.5 bg-app-surface border border-app-border rounded-lg">
+        <div className="dm-latency-banner-info">
+          <div className="dm-latency-banner-title-row flex items-center gap-2">
+            <Clock className="dm-latency-banner-icon w-4 h-4 text-app-warning" />
+            <h3 className="dm-latency-banner-heading text-xs font-bold uppercase tracking-tight text-app-text">
               Route-Level Latency Throttle
             </h3>
           </div>
-          <p className="text-xs text-app-muted mt-0.5">
+          <p className="dm-latency-banner-desc text-xs text-app-muted mt-0.5">
             Add synthetic delay or mock errors to specific API endpoints without throttling the entire browser!
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="dm-latency-banner-actions flex items-center gap-2">
           <span
-            className={`px-2.5 py-1 rounded text-xs font-bold font-mono border ${
+            className={`dm-latency-active-badge px-2.5 py-1 rounded text-xs font-bold font-mono border ${
               activeCount > 0
                 ? 'bg-app-warning-muted text-app-warning border-app-warning/40'
                 : 'bg-app-elevated text-app-muted border-app-border'
@@ -138,20 +138,20 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
           </span>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-app-primary hover:bg-app-primary-hover text-white transition-colors"
+            className="dm-latency-new-rule-btn flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-app-primary hover:bg-app-primary-hover text-white transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>New Rule</span>
+            <Plus className="dm-latency-new-rule-icon w-3.5 h-3.5" />
+            <span className="dm-latency-new-rule-label">New Rule</span>
           </button>
         </div>
       </div>
 
       {/* Quick Add Presets (Solid Cards) */}
-      <div>
-        <span className="text-[11px] font-bold text-app-muted uppercase tracking-wider block mb-2">
+      <div className="dm-latency-presets-section">
+        <span className="dm-latency-presets-heading text-[11px] font-bold text-app-muted uppercase tracking-wider block mb-2">
           Quick Throttle &amp; Error Presets
         </span>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="dm-latency-presets-grid grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <button
             onClick={() =>
               handleQuickPreset({
@@ -160,13 +160,13 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                 delay: 2000,
               })
             }
-            className="p-2.5 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all text-xs"
+            className="dm-latency-preset-card p-2.5 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all text-xs"
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-app-text">Users API Delay</span>
-              <span className="text-[10px] font-mono text-app-warning font-bold">+2000ms</span>
+            <div className="dm-latency-preset-card-header flex items-center justify-between mb-1">
+              <span className="dm-latency-preset-title font-bold text-app-text">Users API Delay</span>
+              <span className="dm-latency-preset-delay-badge text-[10px] font-mono text-app-warning font-bold">+2000ms</span>
             </div>
-            <p className="text-[11px] text-app-muted font-mono">*users*</p>
+            <p className="dm-latency-preset-pattern text-[11px] text-app-muted font-mono">*users*</p>
           </button>
 
           <button
@@ -178,13 +178,13 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                 status: 500,
               })
             }
-            className="p-2.5 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all text-xs"
+            className="dm-latency-preset-card p-2.5 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all text-xs"
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-app-danger">500 Server Chaos</span>
-              <span className="text-[10px] font-mono text-app-danger font-bold">500 ERR</span>
+            <div className="dm-latency-preset-card-header flex items-center justify-between mb-1">
+              <span className="dm-latency-preset-title font-bold text-app-danger">500 Server Chaos</span>
+              <span className="dm-latency-preset-delay-badge text-[10px] font-mono text-app-danger font-bold">500 ERR</span>
             </div>
-            <p className="text-[11px] text-app-muted font-mono">*checkout*</p>
+            <p className="dm-latency-preset-pattern text-[11px] text-app-muted font-mono">*checkout*</p>
           </button>
 
           <button
@@ -196,13 +196,13 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                 status: 429,
               })
             }
-            className="p-2.5 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all text-xs"
+            className="dm-latency-preset-card p-2.5 bg-app-surface hover:bg-app-elevated border border-app-border hover:border-app-border-focus rounded-lg text-left transition-all text-xs"
           >
-            <div className="flex items-center justify-between mb-1">
-              <span className="font-bold text-app-warning">429 Rate Limit</span>
-              <span className="text-[10px] font-mono text-app-warning font-bold">429 LIMIT</span>
+            <div className="dm-latency-preset-card-header flex items-center justify-between mb-1">
+              <span className="dm-latency-preset-title font-bold text-app-warning">429 Rate Limit</span>
+              <span className="dm-latency-preset-delay-badge text-[10px] font-mono text-app-warning font-bold">429 LIMIT</span>
             </div>
-            <p className="text-[11px] text-app-muted font-mono">*auth*</p>
+            <p className="dm-latency-preset-pattern text-[11px] text-app-muted font-mono">*auth*</p>
           </button>
         </div>
       </div>
@@ -211,22 +211,22 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
       {showAddForm && (
         <form
           onSubmit={handleAddRule}
-          className="p-4 bg-app-surface rounded-lg border border-app-border-focus space-y-3.5"
+          className="dm-latency-add-form p-4 bg-app-surface rounded-lg border border-app-border-focus space-y-3.5"
         >
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-app-text uppercase">Create Route Rule</h4>
+          <div className="dm-latency-form-header flex items-center justify-between">
+            <h4 className="dm-latency-form-title text-xs font-bold text-app-text uppercase">Create Route Rule</h4>
             <button
               type="button"
               onClick={() => setShowAddForm(false)}
-              className="text-app-muted hover:text-app-text text-xs"
+              className="dm-latency-form-cancel text-app-muted hover:text-app-text text-xs"
             >
               Cancel
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-[11px] font-semibold text-app-muted block mb-1">
+          <div className="dm-latency-form-row-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="dm-latency-name-field">
+              <label className="dm-latency-name-label text-[11px] font-semibold text-app-muted block mb-1">
                 Rule Name
               </label>
               <input
@@ -234,12 +234,12 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                 value={newRuleName}
                 onChange={(e) => setNewRuleName(e.target.value)}
                 placeholder="e.g. Slow Profile Service"
-                className="w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus"
+                className="dm-latency-name-input w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus"
               />
             </div>
 
-            <div>
-              <label className="text-[11px] font-semibold text-app-muted block mb-1">
+            <div className="dm-latency-pattern-field">
+              <label className="dm-latency-pattern-label text-[11px] font-semibold text-app-muted block mb-1">
                 URL Pattern / Substring / Glob
               </label>
               <input
@@ -251,33 +251,33 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                   if (patternError) setPatternError('');
                 }}
                 placeholder="e.g. */users* or /api/v1/data"
-                className={`w-full px-3 py-1.5 text-xs bg-app-bg border rounded text-app-text font-mono focus:outline-none ${
+                className={`dm-latency-pattern-input w-full px-3 py-1.5 text-xs bg-app-bg border rounded text-app-text font-mono focus:outline-none ${
                   patternError
                     ? 'border-app-danger focus:border-app-danger'
                     : 'border-app-border focus:border-app-border-focus'
                 }`}
               />
               {patternError && (
-                <p className="text-[11px] text-app-danger font-medium mt-1">
+                <p className="dm-latency-pattern-error text-[11px] text-app-danger font-medium mt-1">
                   ⚠️ {patternError}
                 </p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-semibold text-app-muted">
+          <div className="dm-latency-form-row-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="dm-latency-delay-field">
+              <div className="dm-latency-delay-header flex items-center justify-between mb-1">
+                <label className="dm-latency-delay-label text-[11px] font-semibold text-app-muted">
                   Synthetic Latency: {newDelay} ms
                 </label>
-                <div className="flex gap-1">
+                <div className="dm-latency-delay-presets flex gap-1">
                   {[500, 1500, 3000, 5000].map((d) => (
                     <button
                       key={d}
                       type="button"
                       onClick={() => setNewDelay(d)}
-                      className="px-1.5 py-0.5 text-[10px] rounded bg-app-bg hover:bg-app-elevated text-app-text font-mono border border-app-border"
+                      className="dm-latency-delay-preset-btn px-1.5 py-0.5 text-[10px] rounded bg-app-bg hover:bg-app-elevated text-app-text font-mono border border-app-border"
                     >
                       {d >= 1000 ? `${d / 1000}s` : `${d}ms`}
                     </button>
@@ -291,18 +291,18 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                 step="100"
                 value={newDelay}
                 onChange={(e) => setNewDelay(Number(e.target.value))}
-                className="w-full accent-app-primary"
+                className="dm-latency-delay-slider w-full accent-app-primary"
               />
             </div>
 
-            <div>
-              <label className="text-[11px] font-semibold text-app-muted block mb-1">
+            <div className="dm-latency-mock-status-field">
+              <label className="dm-latency-mock-status-label text-[11px] font-semibold text-app-muted block mb-1">
                 Synthetic Mock Status (Optional)
               </label>
               <select
                 value={newMockStatus}
                 onChange={(e) => setNewMockStatus(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus"
+                className="dm-latency-mock-status-select w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus"
               >
                 <option value={0}>Pass through (Real response)</option>
                 <option value={400}>400 Bad Request</option>
@@ -319,7 +319,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
 
           <button
             type="submit"
-            className="w-full py-2 bg-app-primary hover:bg-app-primary-hover font-semibold text-xs text-white rounded transition-colors"
+            className="dm-latency-save-btn w-full py-2 bg-app-primary hover:bg-app-primary-hover font-semibold text-xs text-white rounded transition-colors"
           >
             Save &amp; Activate Latency Rule
           </button>
@@ -327,58 +327,58 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
       )}
 
       {/* Rules List */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-app-text">Configured Route Rules</span>
-          <span className="text-[11px] text-app-muted font-mono">{rules.length} total</span>
+      <div className="dm-latency-rules-list space-y-2">
+        <div className="dm-latency-rules-list-header flex items-center justify-between">
+          <span className="dm-latency-rules-list-title text-xs font-bold text-app-text">Configured Route Rules</span>
+          <span className="dm-latency-rules-count text-[11px] text-app-muted font-mono">{rules.length} total</span>
         </div>
 
         {rules.length === 0 ? (
-          <div className="p-8 text-center bg-app-surface rounded-lg border border-app-border text-app-muted text-xs">
-            <Sliders className="w-8 h-8 mx-auto mb-2 opacity-40 text-app-faint" />
-            <p className="font-semibold text-app-text">No route latency rules configured.</p>
-            <p className="text-[11px] mt-1 text-app-muted">
-              Click "+ New Rule" or choose a quick preset above.
+          <div className="dm-latency-empty-state p-8 text-center bg-app-surface rounded-lg border border-app-border text-app-muted text-xs">
+            <Sliders className="dm-latency-empty-icon w-8 h-8 mx-auto mb-2 opacity-40 text-app-faint" />
+            <p className="dm-latency-empty-primary font-semibold text-app-text">No route latency rules configured.</p>
+            <p className="dm-latency-empty-hint text-[11px] mt-1 text-app-muted">
+              Click &quot;+ New Rule&quot; or choose a quick preset above.
             </p>
           </div>
         ) : (
           rules.map((rule) => (
             <div
               key={rule.id}
-              className={`p-3.5 rounded-lg border transition-all flex items-center justify-between gap-3 ${
+              className={`dm-latency-rule-row p-3.5 rounded-lg border transition-all flex items-center justify-between gap-3 ${
                 rule.enabled
                   ? 'bg-app-surface border-app-border'
                   : 'bg-app-bg border-app-border/60 opacity-60'
               }`}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="dm-latency-rule-info flex items-center gap-3 min-w-0">
                 <button
                   onClick={() => handleToggleRule(rule.id)}
-                  className={`p-2 rounded transition-colors border ${
+                  className={`dm-latency-toggle-btn p-2 rounded transition-colors border ${
                     rule.enabled
                       ? 'bg-app-success-muted text-app-success border-app-success/40'
                       : 'bg-app-bg text-app-muted border-app-border'
                   }`}
                   title={rule.enabled ? 'Click to disable' : 'Click to enable'}
                 >
-                  <Power className="w-4 h-4" />
+                  <Power className="dm-latency-toggle-icon w-4 h-4" />
                 </button>
 
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-app-text truncate">
+                <div className="dm-latency-rule-details min-w-0">
+                  <div className="dm-latency-rule-badges flex items-center gap-2">
+                    <span className="dm-latency-rule-name text-xs font-bold text-app-text truncate">
                       {rule.name}
                     </span>
-                    <span className="px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-warning-muted text-app-warning border border-app-warning/40">
+                    <span className="dm-latency-delay-badge px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-warning-muted text-app-warning border border-app-warning/40">
                       +{rule.delayMs}ms
                     </span>
                     {rule.mockStatus && (
-                      <span className="px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-danger-muted text-app-danger border border-app-danger/40">
+                      <span className="dm-latency-mock-badge px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-danger-muted text-app-danger border border-app-danger/40">
                         {rule.mockStatus} MOCK
                       </span>
                     )}
                   </div>
-                  <span className="font-mono text-[11px] text-app-muted truncate block mt-0.5">
+                  <span className="dm-latency-rule-pattern font-mono text-[11px] text-app-muted truncate block mt-0.5">
                     {rule.urlPattern}
                   </span>
                 </div>
@@ -386,10 +386,10 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
 
               <button
                 onClick={() => handleDeleteRule(rule.id)}
-                className="p-1.5 rounded text-app-muted hover:text-app-danger hover:bg-app-elevated transition-colors shrink-0"
+                className="dm-latency-delete-btn p-1.5 rounded text-app-muted hover:text-app-danger hover:bg-app-elevated transition-colors shrink-0"
                 title="Delete rule"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="dm-latency-delete-icon w-4 h-4" />
               </button>
             </div>
           ))

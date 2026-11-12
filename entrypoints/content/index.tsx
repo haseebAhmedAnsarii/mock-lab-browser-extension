@@ -301,7 +301,7 @@ const ContentApp: React.FC = () => {
   }, []);
 
   return (
-    <div id="dev-chaos-apitrace-root">
+    <div id="dev-chaos-apitrace-root" className="dm-content-overlay-container">
       <SlideOutPanel
         requests={requests}
         isRecording={isRecording}
