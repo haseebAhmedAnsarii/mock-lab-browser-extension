@@ -21,6 +21,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
 }) => {
   const [newRuleName, setNewRuleName] = useState('');
   const [newPattern, setNewPattern] = useState('');
+  const [patternError, setPatternError] = useState('');
   const [newDelay, setNewDelay] = useState(1500);
   const [newMockStatus, setNewMockStatus] = useState<number>(0);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -40,12 +41,23 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
 
   const handleAddRule = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPattern.trim()) return;
+    const trimmedPattern = newPattern.trim();
+    if (!trimmedPattern) return;
+
+    // Ensure URL patterns are strictly unique
+    const existing = rules.find(
+      (r) => r.urlPattern.trim().toLowerCase() === trimmedPattern.toLowerCase()
+    );
+    if (existing) {
+      setPatternError(`A rule for "${trimmedPattern}" already exists ("${existing.name}").`);
+      onNotify?.(`Duplicate pattern: a rule for "${trimmedPattern}" is already configured.`);
+      return;
+    }
 
     const newRule: LatencyRule = {
       id: 'rule_' + Math.random().toString(36).substring(2, 9),
-      name: newRuleName.trim() || `Throttle ${newPattern}`,
-      urlPattern: newPattern.trim(),
+      name: newRuleName.trim() || `Throttle ${trimmedPattern}`,
+      urlPattern: trimmedPattern,
       delayMs: Number(newDelay) || 0,
       enabled: true,
       mockStatus: newMockStatus > 0 ? newMockStatus : undefined,
@@ -57,23 +69,43 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
 
     setNewRuleName('');
     setNewPattern('');
+    setPatternError('');
     setNewDelay(1500);
     setNewMockStatus(0);
     setShowAddForm(false);
   };
 
   const handleQuickPreset = (preset: { name: string; pattern: string; delay: number; status?: number }) => {
-    const newRule: LatencyRule = {
-      id: 'rule_' + Math.random().toString(36).substring(2, 9),
-      name: preset.name,
-      urlPattern: preset.pattern,
-      delayMs: preset.delay,
-      enabled: true,
-      mockStatus: preset.status,
-    };
-    const next = [...rules, newRule];
-    onUpdateRules(next);
-    onNotify?.(`Added quick throttle: ${preset.name}`);
+    const trimmedPresetPattern = preset.pattern.trim().toLowerCase();
+    const existingIndex = rules.findIndex(
+      (r) => r.urlPattern.trim().toLowerCase() === trimmedPresetPattern
+    );
+
+    if (existingIndex !== -1) {
+      // Update and activate existing rule to prevent duplicate pattern entries
+      const next = [...rules];
+      next[existingIndex] = {
+        ...next[existingIndex],
+        name: preset.name,
+        delayMs: preset.delay,
+        mockStatus: preset.status,
+        enabled: true,
+      };
+      onUpdateRules(next);
+      onNotify?.(`Rule for "${preset.pattern}" already exists`);
+    } else {
+      const newRule: LatencyRule = {
+        id: 'rule_' + Math.random().toString(36).substring(2, 9),
+        name: preset.name,
+        urlPattern: preset.pattern,
+        delayMs: preset.delay,
+        enabled: true,
+        mockStatus: preset.status,
+      };
+      const next = [...rules, newRule];
+      onUpdateRules(next);
+      onNotify?.(`Added route rule: ${preset.name}`);
+    }
   };
 
   const activeCount = rules.filter((r) => r.enabled).length;
@@ -214,10 +246,22 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                 type="text"
                 required
                 value={newPattern}
-                onChange={(e) => setNewPattern(e.target.value)}
+                onChange={(e) => {
+                  setNewPattern(e.target.value);
+                  if (patternError) setPatternError('');
+                }}
                 placeholder="e.g. */users* or /api/v1/data"
-                className="w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text font-mono focus:outline-none focus:border-app-border-focus"
+                className={`w-full px-3 py-1.5 text-xs bg-app-bg border rounded text-app-text font-mono focus:outline-none ${
+                  patternError
+                    ? 'border-app-danger focus:border-app-danger'
+                    : 'border-app-border focus:border-app-border-focus'
+                }`}
               />
+              {patternError && (
+                <p className="text-[11px] text-app-danger font-medium mt-1">
+                  ⚠️ {patternError}
+                </p>
+              )}
             </div>
           </div>
 

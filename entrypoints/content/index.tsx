@@ -26,6 +26,19 @@ const DEFAULT_RULES: LatencyRule[] = [
 ];
 
 /**
+ * Ensures configured route rules are strictly unique by URL pattern (case-insensitive).
+ */
+function deduplicateRules(rawRules: LatencyRule[]): LatencyRule[] {
+  const seen = new Set<string>();
+  return rawRules.filter((r) => {
+    const key = r.urlPattern?.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
  * Checks whether the extension context is still alive.
  * In Chrome, reloading the extension in chrome://extensions invalidates existing tabs
  * until the page is refreshed.
@@ -121,15 +134,20 @@ const ContentApp: React.FC = () => {
     }
   };
 
-  // Load persisted latency rules from Chrome storage safely
+  // Load persisted latency rules from Chrome storage safely and ensure uniqueness
   useEffect(() => {
     if (!isExtensionValid()) return;
     try {
       chrome.storage.local.get(['chaos_latency_rules', 'chaos_panel_open'], (res) => {
         if (!isExtensionValid()) return;
         if (res?.chaos_latency_rules && Array.isArray(res.chaos_latency_rules)) {
-          setRules(res.chaos_latency_rules);
-          broadcastConfig(res.chaos_latency_rules, isRecordingRef.current);
+          const uniqueRules = deduplicateRules(res.chaos_latency_rules);
+          setRules(uniqueRules);
+          // Persist cleaned-up rules if duplicates existed previously
+          if (uniqueRules.length !== res.chaos_latency_rules.length) {
+            safeStorageSet({ chaos_latency_rules: uniqueRules });
+          }
+          broadcastConfig(uniqueRules, isRecordingRef.current);
         } else {
           // Broadcast defaults if no storage exists
           broadcastConfig(DEFAULT_RULES, isRecordingRef.current);
@@ -144,9 +162,10 @@ const ContentApp: React.FC = () => {
   }, []);
 
   const handleUpdateRules = (updatedRules: LatencyRule[]) => {
-    setRules(updatedRules);
-    safeStorageSet({ chaos_latency_rules: updatedRules });
-    broadcastConfig(updatedRules, isRecording);
+    const uniqueRules = deduplicateRules(updatedRules);
+    setRules(uniqueRules);
+    safeStorageSet({ chaos_latency_rules: uniqueRules });
+    broadcastConfig(uniqueRules, isRecording);
   };
 
   const handleToggleRecording = () => {
