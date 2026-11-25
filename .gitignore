@@ -6,4 +6,6 @@ node_modules
 dist
 .DS_Store
 Thumbs.db
+.agents/
+skills-lock.json
 

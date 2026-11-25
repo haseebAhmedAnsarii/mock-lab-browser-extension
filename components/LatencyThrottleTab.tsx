@@ -5,6 +5,9 @@ import {
   Trash2,
   Power,
   Sliders,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react';
 import { LatencyRule } from '../utils/types';
 
@@ -26,6 +29,58 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
   const [newMockStatus, setNewMockStatus] = useState<number>(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [deletingRuleId, setDeletingRuleId] = useState<string | null>(null);
+
+  // Edit state
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editPattern, setEditPattern] = useState('');
+  const [editDelay, setEditDelay] = useState(0);
+  const [editMockStatus, setEditMockStatus] = useState<number>(0);
+  const [editPatternError, setEditPatternError] = useState('');
+
+  const startEdit = (rule: LatencyRule) => {
+    setEditingRuleId(rule.id);
+    setEditName(rule.name);
+    setEditPattern(rule.urlPattern);
+    setEditDelay(rule.delayMs);
+    setEditMockStatus(rule.mockStatus ?? 0);
+    setEditPatternError('');
+    setDeletingRuleId(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingRuleId(null);
+    setEditPatternError('');
+  };
+
+  const handleSaveEdit = (id: string) => {
+    const trimmedPattern = editPattern.trim();
+    if (!trimmedPattern) return;
+
+    const duplicate = rules.find(
+      (r) => r.id !== id && r.urlPattern.trim().toLowerCase() === trimmedPattern.toLowerCase()
+    );
+    if (duplicate) {
+      setEditPatternError(`Pattern already used by "${duplicate.name}".`);
+      return;
+    }
+
+    const next = rules.map((r) =>
+      r.id === id
+        ? {
+            ...r,
+            name: editName.trim() || `Throttle ${trimmedPattern}`,
+            urlPattern: trimmedPattern,
+            delayMs: Number(editDelay) || 0,
+            mockStatus: editMockStatus > 0 ? editMockStatus : undefined,
+          }
+        : r
+    );
+    onUpdateRules(next);
+    onNotify?.(`Rule updated: ${editName.trim() || trimmedPattern}`);
+    setEditingRuleId(null);
+    setEditPatternError('');
+  };
 
   const handleToggleRule = (id: string) => {
     const next = rules.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r));
@@ -346,74 +401,194 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
           rules.map((rule) => (
             <div
               key={rule.id}
-              className={`dm-latency-rule-row p-3.5 rounded-lg border transition-all flex items-center justify-between gap-3 ${
+              className={`dm-latency-rule-row rounded-lg border transition-all ${
                 rule.enabled
                   ? 'bg-app-surface border-app-border'
                   : 'bg-app-bg border-app-border/60 opacity-60'
               }`}
             >
-              <div className="dm-latency-rule-info flex items-center gap-3 min-w-0">
-                <button
-                  onClick={() => handleToggleRule(rule.id)}
-                  className={`dm-latency-toggle-btn p-2 rounded transition-colors border ${
-                    rule.enabled
-                      ? 'bg-app-success-muted text-app-success border-app-success/40'
-                      : 'bg-app-bg text-app-muted border-app-border'
-                  }`}
-                  title={rule.enabled ? 'Click to disable' : 'Click to enable'}
-                >
-                  <Power className="dm-latency-toggle-icon w-4 h-4" />
-                </button>
+              {/* ── View mode ── */}
+              {editingRuleId !== rule.id ? (
+                <div className="flex items-center justify-between gap-3 p-3.5">
+                  <div className="dm-latency-rule-info flex items-center gap-3 min-w-0">
+                    <button
+                      onClick={() => handleToggleRule(rule.id)}
+                      className={`dm-latency-toggle-btn p-2 rounded transition-colors border ${
+                        rule.enabled
+                          ? 'bg-app-success-muted text-app-success border-app-success/40'
+                          : 'bg-app-bg text-app-muted border-app-border'
+                      }`}
+                      title={rule.enabled ? 'Click to disable' : 'Click to enable'}
+                    >
+                      <Power className="dm-latency-toggle-icon w-4 h-4" />
+                    </button>
 
-                <div className="dm-latency-rule-details min-w-0">
-                  <div className="dm-latency-rule-badges flex items-center gap-2">
-                    <span className="dm-latency-rule-name text-xs font-bold text-app-text truncate">
-                      {rule.name}
-                    </span>
-                    <span className="dm-latency-delay-badge px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-warning-muted text-app-warning border border-app-warning/40">
-                      +{rule.delayMs}ms
-                    </span>
-                    {rule.mockStatus && (
-                      <span className="dm-latency-mock-badge px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-danger-muted text-app-danger border border-app-danger/40">
-                        {rule.mockStatus} MOCK
+                    <div className="dm-latency-rule-details min-w-0">
+                      <div className="dm-latency-rule-badges flex items-center gap-2">
+                        <span className="dm-latency-rule-name text-xs font-bold text-app-text truncate">
+                          {rule.name}
+                        </span>
+                        <span className="dm-latency-delay-badge px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-warning-muted text-app-warning border border-app-warning/40">
+                          +{rule.delayMs}ms
+                        </span>
+                        {rule.mockStatus && (
+                          <span className="dm-latency-mock-badge px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-danger-muted text-app-danger border border-app-danger/40">
+                            {rule.mockStatus} MOCK
+                          </span>
+                        )}
+                      </div>
+                      <span className="dm-latency-rule-pattern font-mono text-[11px] text-app-muted truncate block mt-0.5">
+                        {rule.urlPattern}
                       </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Edit button */}
+                    <button
+                      onClick={() => startEdit(rule)}
+                      className="dm-latency-edit-btn p-1.5 rounded text-app-muted hover:text-app-primary hover:bg-app-elevated transition-colors"
+                      title="Edit rule"
+                    >
+                      <Pencil className="dm-latency-edit-icon w-4 h-4" />
+                    </button>
+
+                    {/* Delete / confirm */}
+                    {deletingRuleId === rule.id ? (
+                      <div className="dm-latency-delete-confirm-group flex items-center gap-1.5 px-2 py-1 bg-app-danger-muted border border-app-danger/40 rounded text-xs animate-in fade-in duration-100">
+                        <span className="dm-latency-delete-confirm-prompt text-[11px] text-app-danger font-semibold">
+                          Delete?
+                        </span>
+                        <button
+                          onClick={() => { handleDeleteRule(rule.id); setDeletingRuleId(null); }}
+                          className="dm-latency-delete-confirm-yes px-2 py-0.5 rounded text-[10px] font-bold bg-app-danger text-white hover:bg-app-danger/90 transition-colors"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => setDeletingRuleId(null)}
+                          className="dm-latency-delete-confirm-cancel px-1.5 py-0.5 rounded text-[10px] text-app-muted hover:text-app-text transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeletingRuleId(rule.id)}
+                        className="dm-latency-delete-btn p-1.5 rounded text-app-muted hover:text-app-danger hover:bg-app-elevated transition-colors"
+                        title="Delete rule"
+                      >
+                        <Trash2 className="dm-latency-delete-icon w-4 h-4" />
+                      </button>
                     )}
                   </div>
-                  <span className="dm-latency-rule-pattern font-mono text-[11px] text-app-muted truncate block mt-0.5">
-                    {rule.urlPattern}
-                  </span>
-                </div>
-              </div>
-
-              {deletingRuleId === rule.id ? (
-                <div className="dm-latency-delete-confirm-group flex items-center gap-1.5 px-2 py-1 bg-app-danger-muted border border-app-danger/40 rounded text-xs shrink-0 animate-in fade-in duration-100">
-                  <span className="dm-latency-delete-confirm-prompt text-[11px] text-app-danger font-semibold">
-                    Delete?
-                  </span>
-                  <button
-                    onClick={() => {
-                      handleDeleteRule(rule.id);
-                      setDeletingRuleId(null);
-                    }}
-                    className="dm-latency-delete-confirm-yes px-2 py-0.5 rounded text-[10px] font-bold bg-app-danger text-white hover:bg-app-danger/90 transition-colors"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => setDeletingRuleId(null)}
-                    className="dm-latency-delete-confirm-cancel px-1.5 py-0.5 rounded text-[10px] text-app-muted hover:text-app-text transition-colors"
-                  >
-                    Cancel
-                  </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => setDeletingRuleId(rule.id)}
-                  className="dm-latency-delete-btn p-1.5 rounded text-app-muted hover:text-app-danger hover:bg-app-elevated transition-colors shrink-0"
-                  title="Delete rule"
-                >
-                  <Trash2 className="dm-latency-delete-icon w-4 h-4" />
-                </button>
+                /* ── Edit mode ── */
+                <div className="dm-latency-edit-form p-3.5 space-y-3">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[11px] font-bold text-app-primary uppercase tracking-wider">Editing Rule</span>
+                    <button onClick={cancelEdit} className="text-app-muted hover:text-app-text transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Name + Pattern */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[11px] font-semibold text-app-muted block mb-1">Rule Name</label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        placeholder="e.g. Slow Profile Service"
+                        className="w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-app-muted block mb-1">URL Pattern</label>
+                      <input
+                        type="text"
+                        value={editPattern}
+                        onChange={(e) => { setEditPattern(e.target.value); if (editPatternError) setEditPatternError(''); }}
+                        placeholder="e.g. */users*"
+                        className={`w-full px-3 py-1.5 text-xs bg-app-bg border rounded text-app-text font-mono focus:outline-none ${
+                          editPatternError ? 'border-app-danger' : 'border-app-border focus:border-app-border-focus'
+                        }`}
+                      />
+                      {editPatternError && (
+                        <p className="text-[11px] text-app-danger mt-1">⚠️ {editPatternError}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Delay + Mock Status */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-semibold text-app-muted">
+                          Latency: {editDelay} ms
+                        </label>
+                        <div className="flex gap-1">
+                          {[500, 1500, 3000, 5000].map((d) => (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => setEditDelay(d)}
+                              className="px-1.5 py-0.5 text-[10px] rounded bg-app-bg hover:bg-app-elevated text-app-text font-mono border border-app-border"
+                            >
+                              {d >= 1000 ? `${d / 1000}s` : `${d}ms`}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10000"
+                        step="100"
+                        value={editDelay}
+                        onChange={(e) => setEditDelay(Number(e.target.value))}
+                        className="w-full accent-app-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-app-muted block mb-1">Mock Status</label>
+                      <select
+                        value={editMockStatus}
+                        onChange={(e) => setEditMockStatus(Number(e.target.value))}
+                        className="w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus"
+                      >
+                        <option value={0}>Pass through (Real response)</option>
+                        <option value={400}>400 Bad Request</option>
+                        <option value={401}>401 Unauthorized</option>
+                        <option value={403}>403 Forbidden</option>
+                        <option value={404}>404 Not Found</option>
+                        <option value={429}>429 Too Many Requests</option>
+                        <option value={500}>500 Internal Server Error</option>
+                        <option value={502}>502 Bad Gateway</option>
+                        <option value={504}>504 Gateway Timeout</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Save / Cancel */}
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <button
+                      onClick={() => handleSaveEdit(rule.id)}
+                      className="dm-latency-edit-save-btn flex items-center gap-1.5 px-3 py-1.5 bg-app-primary hover:bg-app-primary-hover text-white text-xs font-semibold rounded transition-colors"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="px-3 py-1.5 text-xs text-app-muted hover:text-app-text rounded border border-app-border hover:bg-app-elevated transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           ))

@@ -184,13 +184,11 @@ export default defineContentScript({
         wasThrottled = true;
         throttleDelayMs = matchingRule.delayMs || 0;
 
-        // Synthetic Latency
-        if (matchingRule.delayMs > 0) {
-          await new Promise((resolve) => setTimeout(resolve, matchingRule.delayMs));
-        }
-
         // Offline Simulation
         if (matchingRule.simulateOffline) {
+          if (matchingRule.delayMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, matchingRule.delayMs));
+          }
           const duration = Math.round(performance.now() - startTime);
           emitTraceEvent({
             id: requestId,
@@ -220,6 +218,9 @@ export default defineContentScript({
         const effectiveMockStatus = shouldFailFlaky ? (matchingRule.mockStatus || 500) : matchingRule.mockStatus;
 
         if (effectiveMockStatus && effectiveMockStatus > 0) {
+          if (matchingRule.delayMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, matchingRule.delayMs));
+          }
           const duration = Math.round(performance.now() - startTime);
           const mockBody =
             matchingRule.mockBody ||
@@ -265,7 +266,14 @@ export default defineContentScript({
       }
 
       try {
+        // Send request to real network immediately
         const response = await originalFetch.apply(this, [input, init]);
+
+        // Delay the API response before resolving to caller
+        if (throttleDelayMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, throttleDelayMs));
+        }
+
         const duration = Math.round(performance.now() - startTime);
 
         // Clone response to read body without consuming the consumer's stream
@@ -308,6 +316,9 @@ export default defineContentScript({
 
         return response;
       } catch (err: any) {
+        if (throttleDelayMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, throttleDelayMs));
+        }
         const duration = Math.round(performance.now() - startTime);
         emitTraceEvent({
           id: requestId,
@@ -331,71 +342,76 @@ export default defineContentScript({
     };
 
     // --------------------------------------------------------------------------
-    // Intercept XMLHttpRequest (XHR)
+    // Intercept XMLHttpRequest (XHR) using a full Virtual Proxy
     // --------------------------------------------------------------------------
-    const XHR = window.XMLHttpRequest;
-    const originalOpen = XHR.prototype.open;
-    const originalSend = XHR.prototype.send;
-    const originalSetRequestHeader = XHR.prototype.setRequestHeader;
+    const RealXMLHttpRequest = window.XMLHttpRequest;
 
-    XHR.prototype.open = function (
-      method: string,
-      url: string | URL,
-      async: boolean = true,
-      user?: string | null,
-      password?: string | null
-    ) {
-      (this as any).__trace = {
-        id: 'req_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now(),
-        method: (method || 'GET').toUpperCase(),
-        url: typeof url === 'string' ? url : url.toString(),
-        requestHeaders: {} as Record<string, string>,
-        startTime: 0,
-        startTimestamp: 0,
-      };
+    function createProxiedXHR(): any {
+      const realXhr = new RealXMLHttpRequest();
+      let trace: any = null;
+      let matchingRule: LatencyRule | undefined = undefined;
+      let isThrottling = false;
+      let virtualReadyState = 0;
+      let virtualStatus = 0;
+      let virtualStatusText = '';
+      let virtualResponse: any = null;
+      let virtualResponseText = '';
+      let virtualResponseXML: any = null;
+      let virtualResponseURL = '';
 
-      return originalOpen.apply(this, [method, url, async, user, password]);
-    };
+      const userListeners: { type: string; listener: EventListenerOrEventListenerObject; options?: any }[] = [];
 
-    XHR.prototype.setRequestHeader = function (header: string, value: string) {
-      if ((this as any).__trace) {
-        (this as any).__trace.requestHeaders[header] = value;
-      }
-      return originalSetRequestHeader.apply(this, [header, value]);
-    };
+      let userOnReadyStateChange: any = null;
+      let userOnLoad: any = null;
+      let userOnLoadStart: any = null;
+      let userOnLoadEnd: any = null;
+      let userOnProgress: any = null;
+      let userOnError: any = null;
+      let userOnTimeout: any = null;
+      let userOnAbort: any = null;
 
-    XHR.prototype.send = function (body?: any) {
-      if (!isMonitoringEnabled || !(this as any).__trace) {
-        return originalSend.apply(this, [body]);
-      }
+      function dispatchToUser(event: Event) {
+        const type = event.type;
+        const propMap: Record<string, any> = {
+          readystatechange: userOnReadyStateChange,
+          load: userOnLoad,
+          loadstart: userOnLoadStart,
+          loadend: userOnLoadEnd,
+          progress: userOnProgress,
+          error: userOnError,
+          timeout: userOnTimeout,
+          abort: userOnAbort,
+        };
 
-      const trace = (this as any).__trace;
-      trace.startTime = performance.now();
-      trace.startTimestamp = Date.now();
+        const handler = propMap[type];
+        if (typeof handler === 'function') {
+          try {
+            handler.call(proxy, event);
+          } catch (e) {
+            console.error('[Dev Mock XHR Handler Error]', e);
+          }
+        }
 
-      if (body) {
-        if (typeof body === 'string') {
-          trace.requestBody = body;
-        } else if (body instanceof FormData) {
-          const obj: Record<string, any> = {};
-          body.forEach((v, k) => {
-            obj[k] = typeof v === 'string' ? v : `[File: ${v.name}]`;
-          });
-          trace.requestBody = JSON.stringify(obj);
-        } else {
-          trace.requestBody = '[XHR Payload]';
+        for (const entry of [...userListeners]) {
+          if (entry.type === type) {
+            try {
+              if (typeof entry.listener === 'function') {
+                entry.listener.call(proxy, event);
+              } else if (entry.listener && typeof entry.listener.handleEvent === 'function') {
+                entry.listener.handleEvent(event);
+              }
+            } catch (e) {
+              console.error('[Dev Mock XHR Listener Error]', e);
+            }
+          }
         }
       }
 
-      const matchingRule = findMatchingRule(trace.url);
-      trace.wasThrottled = Boolean(matchingRule);
-      trace.throttleDelayMs = matchingRule?.delayMs || 0;
-
-      const handleLoadEnd = () => {
+      function emitXhrTrace() {
+        if (!trace) return;
         const duration = Math.round(performance.now() - trace.startTime);
 
-        // Parse headers
-        const rawHeaders = this.getAllResponseHeaders();
+        const rawHeaders = realXhr.getAllResponseHeaders();
         const responseHeaders: Record<string, string> = {};
         if (rawHeaders) {
           const headerPairs = rawHeaders.trim().split(/[\r\n]+/);
@@ -409,12 +425,12 @@ export default defineContentScript({
 
         let responseBody: string | null = null;
         try {
-          if (this.responseType === '' || this.responseType === 'text') {
-            responseBody = this.responseText;
-          } else if (this.responseType === 'json') {
-            responseBody = JSON.stringify(this.response);
+          if (realXhr.responseType === '' || realXhr.responseType === 'text') {
+            responseBody = realXhr.responseText;
+          } else if (realXhr.responseType === 'json') {
+            responseBody = JSON.stringify(realXhr.response);
           } else {
-            responseBody = `[${this.responseType} Response]`;
+            responseBody = `[${realXhr.responseType} Response]`;
           }
         } catch {
           responseBody = '[Unreadable XHR Response]';
@@ -428,8 +444,8 @@ export default defineContentScript({
           startTime: trace.startTimestamp,
           endTime: Date.now(),
           duration,
-          status: this.status,
-          statusText: this.statusText,
+          status: realXhr.status,
+          statusText: realXhr.statusText,
           requestHeaders: trace.requestHeaders,
           requestBody: trace.requestBody,
           responseHeaders,
@@ -439,19 +455,236 @@ export default defineContentScript({
           wasThrottled: trace.wasThrottled,
           throttleDelayMs: trace.throttleDelayMs,
         });
-      };
-
-      this.addEventListener('loadend', handleLoadEnd, { once: true });
-
-      // Apply synthetic delay to XHR if matching
-      if (matchingRule && matchingRule.delayMs > 0) {
-        setTimeout(() => {
-          originalSend.apply(this, [body]);
-        }, matchingRule.delayMs);
-        return;
       }
 
-      return originalSend.apply(this, [body]);
-    };
+      realXhr.addEventListener('loadstart', (e) => {
+        dispatchToUser(e);
+      });
+
+      realXhr.addEventListener('progress', (e) => {
+        if (!isThrottling) {
+          dispatchToUser(e);
+        }
+      });
+
+      realXhr.addEventListener('readystatechange', (e) => {
+        if (!isThrottling) {
+          dispatchToUser(e);
+        } else if (realXhr.readyState < 4) {
+          virtualReadyState = realXhr.readyState;
+          dispatchToUser(e);
+        }
+      });
+
+      realXhr.addEventListener('load', (e) => {
+        if (!isThrottling) {
+          dispatchToUser(e);
+        }
+      });
+
+      realXhr.addEventListener('error', (e) => {
+        if (!isThrottling) {
+          dispatchToUser(e);
+        }
+      });
+
+      realXhr.addEventListener('timeout', (e) => {
+        if (!isThrottling) {
+          dispatchToUser(e);
+        }
+      });
+
+      realXhr.addEventListener('abort', (e) => {
+        if (!isThrottling) {
+          dispatchToUser(e);
+        }
+      });
+
+      realXhr.addEventListener('loadend', (e) => {
+        if (!isThrottling) {
+          emitXhrTrace();
+          dispatchToUser(e);
+          return;
+        }
+
+        const delayMs = matchingRule?.delayMs || 0;
+        setTimeout(() => {
+          virtualReadyState = realXhr.readyState;
+          virtualStatus = realXhr.status;
+          virtualStatusText = realXhr.statusText;
+          virtualResponse = realXhr.response;
+          try { virtualResponseText = realXhr.responseText; } catch {}
+          try { virtualResponseXML = realXhr.responseXML; } catch {}
+          virtualResponseURL = realXhr.responseURL;
+          isThrottling = false;
+
+          emitXhrTrace();
+
+          dispatchToUser(new Event('readystatechange'));
+          dispatchToUser(new ProgressEvent('load'));
+          dispatchToUser(e);
+        }, delayMs);
+      });
+
+      const proxy: any = {
+        get readyState() {
+          return isThrottling ? virtualReadyState : realXhr.readyState;
+        },
+        get status() {
+          return isThrottling ? virtualStatus : realXhr.status;
+        },
+        get statusText() {
+          return isThrottling ? virtualStatusText : realXhr.statusText;
+        },
+        get response() {
+          return isThrottling ? virtualResponse : realXhr.response;
+        },
+        get responseText() {
+          return isThrottling ? virtualResponseText : realXhr.responseText;
+        },
+        get responseXML() {
+          return isThrottling ? virtualResponseXML : realXhr.responseXML;
+        },
+        get responseURL() {
+          return isThrottling ? virtualResponseURL : realXhr.responseURL;
+        },
+        get responseType() {
+          return realXhr.responseType;
+        },
+        set responseType(val) {
+          realXhr.responseType = val;
+        },
+        get timeout() {
+          return realXhr.timeout;
+        },
+        set timeout(val) {
+          realXhr.timeout = val;
+        },
+        get withCredentials() {
+          return realXhr.withCredentials;
+        },
+        set withCredentials(val) {
+          realXhr.withCredentials = val;
+        },
+        get upload() {
+          return realXhr.upload;
+        },
+
+        get onreadystatechange() { return userOnReadyStateChange; },
+        set onreadystatechange(fn) { userOnReadyStateChange = fn; },
+        get onload() { return userOnLoad; },
+        set onload(fn) { userOnLoad = fn; },
+        get onloadstart() { return userOnLoadStart; },
+        set onloadstart(fn) { userOnLoadStart = fn; },
+        get onloadend() { return userOnLoadEnd; },
+        set onloadend(fn) { userOnLoadEnd = fn; },
+        get onprogress() { return userOnProgress; },
+        set onprogress(fn) { userOnProgress = fn; },
+        get onerror() { return userOnError; },
+        set onerror(fn) { userOnError = fn; },
+        get ontimeout() { return userOnTimeout; },
+        set ontimeout(fn) { userOnTimeout = fn; },
+        get onabort() { return userOnAbort; },
+        set onabort(fn) { userOnAbort = fn; },
+
+        open(method: string, url: string | URL, async: boolean = true, user?: string | null, password?: string | null) {
+          const urlStr = typeof url === 'string' ? url : url.toString();
+          trace = {
+            id: 'req_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now(),
+            method: (method || 'GET').toUpperCase(),
+            url: urlStr,
+            requestHeaders: {} as Record<string, string>,
+            startTime: 0,
+            startTimestamp: 0,
+            wasThrottled: false,
+            throttleDelayMs: 0,
+          };
+          matchingRule = findMatchingRule(urlStr);
+          if (matchingRule) {
+            trace.wasThrottled = true;
+            trace.throttleDelayMs = matchingRule.delayMs || 0;
+          }
+          return realXhr.open(method, url, async, user, password);
+        },
+
+        setRequestHeader(header: string, value: string) {
+          if (trace) {
+            trace.requestHeaders[header] = value;
+          }
+          return realXhr.setRequestHeader(header, value);
+        },
+
+        send(body?: any) {
+          if (trace) {
+            trace.startTime = performance.now();
+            trace.startTimestamp = Date.now();
+            if (body) {
+              if (typeof body === 'string') {
+                trace.requestBody = body;
+              } else if (body instanceof FormData) {
+                const obj: Record<string, any> = {};
+                body.forEach((v, k) => {
+                  obj[k] = typeof v === 'string' ? v : `[File: ${v.name}]`;
+                });
+                trace.requestBody = JSON.stringify(obj);
+              } else {
+                trace.requestBody = '[XHR Payload]';
+              }
+            }
+          }
+
+          if (isMonitoringEnabled && matchingRule && matchingRule.delayMs > 0) {
+            isThrottling = true;
+          } else {
+            isThrottling = false;
+          }
+
+          return realXhr.send(body);
+        },
+
+        abort() {
+          isThrottling = false;
+          return realXhr.abort();
+        },
+
+        getAllResponseHeaders() {
+          return realXhr.getAllResponseHeaders();
+        },
+
+        getResponseHeader(header: string) {
+          return realXhr.getResponseHeader(header);
+        },
+
+        overrideMimeType(mime: string) {
+          return realXhr.overrideMimeType(mime);
+        },
+
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: any) {
+          userListeners.push({ type, listener, options });
+        },
+
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject) {
+          const idx = userListeners.findIndex((e) => e.type === type && e.listener === listener);
+          if (idx !== -1) userListeners.splice(idx, 1);
+        },
+
+        dispatchEvent(event: Event) {
+          dispatchToUser(event);
+          return !event.defaultPrevented;
+        },
+      };
+
+      Object.setPrototypeOf(proxy, RealXMLHttpRequest.prototype);
+      return proxy;
+    }
+
+    const ProxiedXMLHttpRequest = function (this: any) {
+      return createProxiedXHR();
+    } as any;
+
+    ProxiedXMLHttpRequest.prototype = RealXMLHttpRequest.prototype;
+    Object.assign(ProxiedXMLHttpRequest, RealXMLHttpRequest);
+
+    window.XMLHttpRequest = ProxiedXMLHttpRequest;
   },
 });

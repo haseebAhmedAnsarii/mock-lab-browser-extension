@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Loading Test — JSONPlaceholder</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f0f0f;
+      color: #e5e5e5;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #f5f5f5;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 28px;
+    }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .btn {
+      padding: 8px 18px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #1a1a1a;
+      color: #ccc;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .btn:hover { background: #252525; color: #fff; border-color: #555; }
+    .btn.active { background: #d97706; color: #fff; border-color: #d97706; }
+
+    /* ── Status bar ── */
+    #status {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #d97706;
+      min-height: 20px;
+      margin-bottom: 20px;
+      transition: opacity 0.2s;
+    }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #1c1b1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-id {
+      font-size: 0.7rem;
+      color: #555;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e5e5e5;
+      line-height: 1.4;
+      text-transform: capitalize;
+    }
+
+    .card-body {
+      font-size: 0.82rem;
+      color: #888;
+      line-height: 1.6;
+    }
+
+    .card-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #282725;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      color: #d97706;
+      font-weight: 500;
+      align-self: flex-start;
+    }
+
+    /* ── Skeleton ── */
+    .skeleton-card {
+      background: #1c1b1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .skel {
+      border-radius: 4px;
+      background: linear-gradient(90deg, #242424 25%, #2e2e2e 50%, #242424 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .skel-sm  { height: 10px; width: 40%; }
+    .skel-md  { height: 14px; width: 85%; }
+    .skel-md2 { height: 14px; width: 65%; }
+    .skel-lg  { height: 10px; width: 100%; }
+    .skel-lg2 { height: 10px; width: 90%; }
+    .skel-tag { height: 20px; width: 60px; border-radius: 4px; }
+
+    /* ── Error ── */
+    .error-msg {
+      text-align: center;
+      color: #ef4444;
+      font-size: 0.9rem;
+      padding: 40px;
+      grid-column: 1 / -1;
+    }
+
+    /* ── Empty ── */
+    .empty-msg {
+      text-align: center;
+      color: #555;
+      font-size: 0.9rem;
+      padding: 40px;
+      grid-column: 1 / -1;
+    }
+
+    /* ── Comment view ── */
+    .comment-card .card-title { font-size: 0.85rem; color: #aaa; }
+    .comment-email {
+      font-size: 0.75rem;
+      color: #d97706;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🔬 API Loading Test</h1>
+  <p class="subtitle">Uses <strong>jsonplaceholder.typicode.com</strong> — toggle endpoints to trigger fetch with loading skeletons</p>
+
+  <div class="toolbar">
+    <button class="btn active" onclick="load('posts')">📄 Posts</button>
+    <button class="btn" onclick="load('comments')">💬 Comments</button>
+    <button class="btn" onclick="load('users')">👤 Users</button>
+    <button class="btn" onclick="load('todos')">✅ Todos</button>
+    <button class="btn" onclick="load('photos')">🖼 Photos</button>
+    <button class="btn" onclick="reload()">🔄 Reload Same</button>
+  </div>
+
+  <div id="status">Loading posts…</div>
+  <div class="grid" id="grid"></div>
+
+  <script>
+    let currentEndpoint = 'posts';
+
+    function setStatus(msg) {
+      document.getElementById('status').textContent = msg;
+    }
+
+    function showSkeletons(count = 9) {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = Array.from({ length: count }, () => `
+        <div class="skeleton-card">
+          <div class="skel skel-sm"></div>
+          <div class="skel skel-md"></div>
+          <div class="skel skel-md2"></div>
+          <div class="skel skel-lg"></div>
+          <div class="skel skel-lg2"></div>
+          <div class="skel skel-tag"></div>
+        </div>
+      `).join('');
+    }
+
+    function renderCard(item, endpoint) {
+      if (endpoint === 'posts') {
+        return `
+          <div class="card">
+            <span class="card-id">Post #${item.id} · User ${item.userId}</span>
+            <div class="card-title">${item.title}</div>
+            <div class="card-body">${item.body}</div>
+            <span class="card-tag">posts</span>
+          </div>`;
+      }
+      if (endpoint === 'comments') {
+        return `
+          <div class="card comment-card">
+            <span class="card-id">Comment #${item.id} · Post ${item.postId}</span>
+            <div class="comment-email">${item.email}</div>
+            <div class="card-title">${item.name}</div>
+            <div class="card-body">${item.body}</div>
+            <span class="card-tag">comments</span>
+          </div>`;
+      }
+      if (endpoint === 'users') {
+        return `
+          <div class="card">
+            <span class="card-id">User #${item.id}</span>
+            <div class="card-title">${item.name}</div>
+            <div class="card-body">
+              📧 ${item.email}<br>
+              🌐 ${item.website}<br>
+              🏢 ${item.company?.name}<br>
+              📍 ${item.address?.city}
+            </div>
+            <span class="card-tag">users</span>
+          </div>`;
+      }
+      if (endpoint === 'todos') {
+        return `
+          <div class="card">
+            <span class="card-id">Todo #${item.id} · User ${item.userId}</span>
+            <div class="card-title" style="color:${item.completed ? '#4ade80' : '#e5e5e5'}">
+              ${item.completed ? '✅' : '⬜'} ${item.title}
+            </div>
+            <span class="card-tag" style="${item.completed ? 'background:#14532d;color:#4ade80' : ''}">${item.completed ? 'done' : 'pending'}</span>
+          </div>`;
+      }
+      if (endpoint === 'photos') {
+        return `
+          <div class="card">
+            <span class="card-id">Photo #${item.id} · Album ${item.albumId}</span>
+            <img src="${item.thumbnailUrl}" alt="${item.title}"
+              style="width:100%;border-radius:6px;aspect-ratio:1;object-fit:cover;background:#222;" loading="lazy" />
+            <div class="card-title" style="font-size:0.8rem">${item.title}</div>
+            <span class="card-tag">photos</span>
+          </div>`;
+      }
+      return '';
+    }
+
+    async function load(endpoint, limit = 18) {
+      // Update active button
+      document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+      const btns = document.querySelectorAll('.btn');
+      btns.forEach(b => { if (b.textContent.toLowerCase().includes(endpoint)) b.classList.add('active'); });
+
+      currentEndpoint = endpoint;
+      showSkeletons(endpoint === 'users' ? 10 : endpoint === 'todos' ? 20 : 9);
+      setStatus(`⏳ Fetching ${endpoint}…`);
+
+      try {
+        const url = `https://jsonplaceholder.typicode.com/${endpoint}?_limit=${limit}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        const grid = document.getElementById('grid');
+        if (!data.length) {
+          grid.innerHTML = `<p class="empty-msg">No results found.</p>`;
+          setStatus('');
+          return;
+        }
+
+        grid.innerHTML = data.map(item => renderCard(item, endpoint)).join('');
+        setStatus(`✓ ${data.length} ${endpoint} loaded`);
+        setTimeout(() => setStatus(''), 2000);
+      } catch (err) {
+        document.getElementById('grid').innerHTML =
+          `<p class="error-msg">❌ Error: ${err.message}</p>`;
+        setStatus('Request failed');
+      }
+    }
+
+    function reload() {
+      load(currentEndpoint);
+    }
+
+    // Initial load
+    load('posts');
+  </script>
+</body>
+</html>
