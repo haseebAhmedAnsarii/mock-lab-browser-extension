@@ -351,6 +351,8 @@ export default defineContentScript({
       let trace: any = null;
       let matchingRule: LatencyRule | undefined = undefined;
       let isThrottling = false;
+      let isMocked = false;
+      let mockTimer: ReturnType<typeof setTimeout> | null = null;
       let virtualReadyState = 0;
       let virtualStatus = 0;
       let virtualStatusText = '';
@@ -358,6 +360,12 @@ export default defineContentScript({
       let virtualResponseText = '';
       let virtualResponseXML: any = null;
       let virtualResponseURL = '';
+      const virtualHeaders: Record<string, string> = {
+        'content-type': 'application/json',
+        'x-chaos-mock': 'true',
+      };
+
+      const useVirtualState = () => isThrottling || isMocked;
 
       const userListeners: { type: string; listener: EventListenerOrEventListenerObject; options?: any }[] = [];
 
@@ -528,25 +536,25 @@ export default defineContentScript({
 
       const proxy: any = {
         get readyState() {
-          return isThrottling ? virtualReadyState : realXhr.readyState;
+          return useVirtualState() ? virtualReadyState : realXhr.readyState;
         },
         get status() {
-          return isThrottling ? virtualStatus : realXhr.status;
+          return useVirtualState() ? virtualStatus : realXhr.status;
         },
         get statusText() {
-          return isThrottling ? virtualStatusText : realXhr.statusText;
+          return useVirtualState() ? virtualStatusText : realXhr.statusText;
         },
         get response() {
-          return isThrottling ? virtualResponse : realXhr.response;
+          return useVirtualState() ? virtualResponse : realXhr.response;
         },
         get responseText() {
-          return isThrottling ? virtualResponseText : realXhr.responseText;
+          return useVirtualState() ? virtualResponseText : realXhr.responseText;
         },
         get responseXML() {
-          return isThrottling ? virtualResponseXML : realXhr.responseXML;
+          return useVirtualState() ? virtualResponseXML : realXhr.responseXML;
         },
         get responseURL() {
-          return isThrottling ? virtualResponseURL : realXhr.responseURL;
+          return useVirtualState() ? virtualResponseURL : realXhr.responseURL;
         },
         get responseType() {
           return realXhr.responseType;
@@ -589,6 +597,19 @@ export default defineContentScript({
 
         open(method: string, url: string | URL, async: boolean = true, user?: string | null, password?: string | null) {
           const urlStr = typeof url === 'string' ? url : url.toString();
+          if (mockTimer !== null) {
+            clearTimeout(mockTimer);
+            mockTimer = null;
+          }
+          isThrottling = false;
+          isMocked = false;
+          virtualReadyState = 1;
+          virtualStatus = 0;
+          virtualStatusText = '';
+          virtualResponse = null;
+          virtualResponseText = '';
+          virtualResponseXML = null;
+          virtualResponseURL = '';
           trace = {
             id: 'req_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now(),
             method: (method || 'GET').toUpperCase(),
@@ -640,8 +661,11 @@ export default defineContentScript({
               : undefined;
 
           if (effectiveMockStatus) {
+            isMocked = true;
+            virtualReadyState = realXhr.readyState || 1;
             const delayMs = matchingRule?.delayMs || 0;
-            setTimeout(() => {
+            mockTimer = setTimeout(() => {
+              mockTimer = null;
               const mockBody =
                 matchingRule?.mockBody ||
                 JSON.stringify({
@@ -655,7 +679,7 @@ export default defineContentScript({
               virtualReadyState = 4;
               virtualStatus = effectiveMockStatus;
               virtualStatusText = `Chaos Mock ${effectiveMockStatus}`;
-              virtualResponse = parsedBody;
+              virtualResponse = realXhr.responseType === 'json' ? parsedBody : mockBody;
               virtualResponseText = mockBody;
               virtualResponseURL = typeof trace?.url === 'string' ? trace.url : '';
 
@@ -671,9 +695,9 @@ export default defineContentScript({
                 statusText: `Chaos Mock ${effectiveMockStatus}`,
                 requestHeaders: trace?.requestHeaders ?? {},
                 requestBody: trace?.requestBody ?? null,
-                responseHeaders: { 'content-type': 'application/json', 'x-chaos-mock': 'true' },
+                responseHeaders: { ...virtualHeaders },
                 responseBody: mockBody,
-                size: mockBody.length,
+                size: new Blob([mockBody]).size,
                 isSlow: (matchingRule?.delayMs ?? 0) > 500,
                 wasThrottled: true,
                 throttleDelayMs: delayMs,
@@ -698,15 +722,36 @@ export default defineContentScript({
         },
 
         abort() {
+          if (mockTimer !== null) {
+            clearTimeout(mockTimer);
+            mockTimer = null;
+            if (isMocked && virtualReadyState !== 4) {
+              virtualReadyState = 4;
+              virtualStatus = 0;
+              virtualStatusText = '';
+              dispatchToUser(new Event('readystatechange'));
+              dispatchToUser(new ProgressEvent('abort'));
+              dispatchToUser(new ProgressEvent('loadend'));
+            }
+            return;
+          }
           isThrottling = false;
           return realXhr.abort();
         },
 
         getAllResponseHeaders() {
+          if (isMocked) {
+            return Object.entries(virtualHeaders)
+              .map(([k, v]) => `${k}: ${v}\r\n`)
+              .join('');
+          }
           return realXhr.getAllResponseHeaders();
         },
 
         getResponseHeader(header: string) {
+          if (isMocked) {
+            return virtualHeaders[header.toLowerCase()] ?? null;
+          }
           return realXhr.getResponseHeader(header);
         },
 
