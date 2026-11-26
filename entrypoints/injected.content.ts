@@ -630,7 +630,59 @@ export default defineContentScript({
               } else {
                 trace.requestBody = '[XHR Payload]';
               }
-            }
+          }
+          }
+
+          // ── Mock Status intercept (XHR) ──
+          const effectiveMockStatus =
+            isMonitoringEnabled && matchingRule?.mockStatus && matchingRule.mockStatus > 0
+              ? matchingRule.mockStatus
+              : undefined;
+
+          if (effectiveMockStatus) {
+            const delayMs = matchingRule?.delayMs || 0;
+            setTimeout(() => {
+              const mockBody = JSON.stringify({
+                message: `Synthetic chaos response ${effectiveMockStatus}`,
+                rule: matchingRule?.name,
+                status: effectiveMockStatus,
+              });
+
+              // Synthesise virtual state without hitting the network
+              virtualReadyState = 4;
+              virtualStatus = effectiveMockStatus;
+              virtualStatusText = `Chaos Mock ${effectiveMockStatus}`;
+              virtualResponse = mockBody;
+              virtualResponseText = mockBody;
+              virtualResponseURL = typeof trace?.url === 'string' ? trace.url : '';
+
+              emitTraceEvent({
+                id: trace?.id ?? '',
+                url: trace?.url ?? '',
+                method: trace?.method ?? 'GET',
+                type: 'xhr',
+                startTime: trace?.startTimestamp ?? Date.now(),
+                endTime: Date.now(),
+                duration: Math.round(performance.now() - (trace?.startTime ?? 0)),
+                status: effectiveMockStatus,
+                statusText: `Chaos Mock ${effectiveMockStatus}`,
+                requestHeaders: trace?.requestHeaders ?? {},
+                requestBody: trace?.requestBody ?? null,
+                responseHeaders: { 'content-type': 'application/json', 'x-chaos-mock': 'true' },
+                responseBody: mockBody,
+                size: mockBody.length,
+                isSlow: (matchingRule?.delayMs ?? 0) > 500,
+                wasThrottled: true,
+                throttleDelayMs: delayMs,
+              });
+
+              dispatchToUser(new Event('readystatechange'));
+              dispatchToUser(new ProgressEvent('load'));
+              dispatchToUser(new ProgressEvent('loadend'));
+            }, delayMs);
+
+            // Do NOT send the real XHR at all
+            return;
           }
 
           if (isMonitoringEnabled && matchingRule && matchingRule.delayMs > 0) {
