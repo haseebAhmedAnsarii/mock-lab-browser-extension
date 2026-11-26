@@ -6,12 +6,14 @@ import {
   X,
   Minimize2,
   Maximize2,
+  PanelLeft,
+  PanelRight,
   ChevronRight,
   Shield,
   Layers,
   Sparkles,
 } from 'lucide-react';
-import { CapturedRequest, LatencyRule } from '../utils/types';
+import { CapturedRequest, DockSide, LatencyRule } from '../utils/types';
 import { ChaosPaletteTab } from './ChaosPaletteTab';
 import { LatencyThrottleTab } from './LatencyThrottleTab';
 import { ApiTraceTab } from './ApiTraceTab';
@@ -26,6 +28,8 @@ interface SlideOutPanelProps {
   onReplayRequest?: (req: CapturedRequest) => void;
   isOpen: boolean;
   onToggleOpen: () => void;
+  dockSide: DockSide;
+  onToggleDockSide: () => void;
 }
 
 function isExtensionValid(): boolean {
@@ -46,6 +50,8 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
   onReplayRequest,
   isOpen,
   onToggleOpen,
+  dockSide,
+  onToggleDockSide,
 }) => {
   const [activeTab, setActiveTab] = useState<'chaos' | 'latency' | 'apitrace'>('chaos');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -86,7 +92,9 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
       {!isOpen && (
         <button
           onClick={onToggleOpen}
-          className="dm-panel-dock-btn fixed bottom-6 right-6 z-[9999999] flex items-center gap-2.5 px-3.5 py-2.5 bg-app-bg hover:bg-app-surface text-app-text rounded-lg shadow-xl border border-app-border transition-all hover:border-app-border-focus font-sans"
+          className={`dm-panel-dock-btn fixed bottom-6 z-[9999999] flex items-center gap-2.5 px-3.5 py-2.5 bg-app-bg hover:bg-app-surface text-app-text rounded-lg shadow-xl border border-app-border transition-all hover:border-app-border-focus font-sans ${
+            dockSide === 'left' ? 'left-6' : 'right-6'
+          }`}
           title="Open Dev Mock & Chaos Testing Palette | APITrace"
         >
           <div className="dm-panel-dock-label flex items-center gap-2">
@@ -114,7 +122,9 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
       {/* Slide-Out Drawer Panel (Flat, Solid Architecture) */}
       {isOpen && (
         <div
-          className={`dm-panel-root fixed top-0 right-0 h-full z-[9999999] bg-app-bg text-app-text shadow-2xl border-l border-app-border flex flex-col font-sans transition-all duration-150 ${
+          className={`dm-panel-root fixed top-0 h-full z-[9999999] bg-app-bg text-app-text shadow-2xl border-app-border flex flex-col font-sans transition-[width] duration-150 ${
+            dockSide === 'left' ? 'left-0 border-r' : 'right-0 border-l'
+          } ${
             isFullWidth ? 'w-full sm:w-[94vw]' : 'w-full sm:w-[680px]'
           }`}
           style={{ maxWidth: '100vw' }}
@@ -149,6 +159,22 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
                   ⚠️ Refresh Tab (F5)
                 </span>
               )}
+              <button
+                onClick={() => {
+                  const nextSide = dockSide === 'left' ? 'right' : 'left';
+                  onToggleDockSide();
+                  showToast(`Drawer docked to ${nextSide} side`);
+                }}
+                className="dm-panel-dock-toggle-btn p-1.5 rounded text-app-muted hover:text-app-text hover:bg-app-elevated transition-colors"
+                title={dockSide === 'left' ? 'Dock drawer to right side' : 'Dock drawer to left side'}
+                aria-label={dockSide === 'left' ? 'Dock drawer to right side' : 'Dock drawer to left side'}
+              >
+                {dockSide === 'left' ? (
+                  <PanelRight className="dm-panel-dock-toggle-icon w-4 h-4" />
+                ) : (
+                  <PanelLeft className="dm-panel-dock-toggle-icon w-4 h-4" />
+                )}
+              </button>
               <button
                 onClick={() => setIsFullWidth(!isFullWidth)}
                 className="dm-panel-expand-btn p-1.5 rounded text-app-muted hover:text-app-text hover:bg-app-elevated transition-colors"

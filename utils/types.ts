@@ -2,6 +2,8 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 
 
 export type RequestType = 'fetch' | 'xhr';
 
+export type DockSide = 'left' | 'right';
+
 export interface CapturedRequest {
   id: string;
   url: string;

@@ -9,7 +9,10 @@ import {
   Layers,
   ChevronRight,
   ShieldCheck,
+  PanelLeft,
+  PanelRight,
 } from 'lucide-react';
+import { DockSide } from '../../utils/types';
 
 export default function App() {
   const [stats, setStats] = useState({
@@ -17,6 +20,7 @@ export default function App() {
     activeRulesCount: 0,
     domStats: { textNodes: 0, images: 0, lists: 0 },
     isOpen: false,
+    dockSide: 'right' as DockSide,
   });
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -28,7 +32,7 @@ export default function App() {
             return;
           }
           if (res) {
-            setStats(res);
+            setStats((prev) => ({ ...prev, ...res }));
           }
         });
       }
@@ -37,6 +41,11 @@ export default function App() {
 
   useEffect(() => {
     fetchTabStats();
+    chrome.storage.local.get('chaos_panel_dock', (res) => {
+      if (res?.chaos_panel_dock === 'left' || res?.chaos_panel_dock === 'right') {
+        setStats((prev) => ({ ...prev, dockSide: res.chaos_panel_dock }));
+      }
+    });
   }, []);
 
   const sendTabMessage = (msg: any, successFeedback: string) => {
@@ -56,6 +65,14 @@ export default function App() {
 
   const handleTogglePanel = () => {
     sendTabMessage({ type: 'TOGGLE_PANEL' }, 'Toggled in-page slide-out panel');
+  };
+
+  const handleToggleDockSide = () => {
+    const nextDock: DockSide = stats.dockSide === 'right' ? 'left' : 'right';
+    chrome.storage.local.set({ chaos_panel_dock: nextDock });
+    setStats((prev) => ({ ...prev, dockSide: nextDock }));
+    setStatusMessage(`Drawer docked to ${nextDock} side`);
+    setTimeout(() => setStatusMessage(null), 2500);
   };
 
   const handleSimulateEmptyLists = () => {
@@ -102,17 +119,32 @@ export default function App() {
         </div>
       )}
 
-      {/* Big Launch Slide-Out Button (Solid High-Contrast, No Gradients) */}
-      <button
-        onClick={handleTogglePanel}
-        className="dm-popup-launch-btn w-full py-2.5 px-3 bg-app-text hover:bg-white text-app-bg rounded text-xs font-bold flex items-center justify-between transition-colors shadow-sm"
-      >
-        <span className="dm-popup-launch-btn-label flex items-center gap-2">
-          <Layers className="dm-popup-launch-btn-icon w-4 h-4" />
-          <span className="dm-popup-launch-btn-text">{stats.isOpen ? 'Close Slide-Out Drawer' : 'Launch In-Page Slide-Out'}</span>
-        </span>
-        <ChevronRight className="dm-popup-launch-btn-chevron w-4 h-4" />
-      </button>
+      {/* Big Launch Slide-Out Button & Dock Side Toggle (Solid High-Contrast, No Gradients) */}
+      <div className="dm-popup-launch-row flex items-center gap-1.5">
+        <button
+          onClick={handleTogglePanel}
+          className="dm-popup-launch-btn flex-1 py-2.5 px-3 bg-app-text hover:bg-white text-app-bg rounded text-xs font-bold flex items-center justify-between transition-colors shadow-sm"
+        >
+          <span className="dm-popup-launch-btn-label flex items-center gap-2">
+            <Layers className="dm-popup-launch-btn-icon w-4 h-4" />
+            <span className="dm-popup-launch-btn-text">{stats.isOpen ? 'Close Slide-Out Drawer' : 'Launch In-Page Slide-Out'}</span>
+          </span>
+          <ChevronRight className="dm-popup-launch-btn-chevron w-4 h-4" />
+        </button>
+
+        <button
+          onClick={handleToggleDockSide}
+          className="dm-popup-dock-btn p-2.5 bg-app-surface hover:bg-app-elevated text-app-muted hover:text-app-text border border-app-border rounded transition-colors shrink-0"
+          title={stats.dockSide === 'left' ? 'Dock drawer to right side' : 'Dock drawer to left side'}
+          aria-label={stats.dockSide === 'left' ? 'Dock drawer to right side' : 'Dock drawer to left side'}
+        >
+          {stats.dockSide === 'left' ? (
+            <PanelRight className="dm-popup-dock-icon w-4 h-4" />
+          ) : (
+            <PanelLeft className="dm-popup-dock-icon w-4 h-4" />
+          )}
+        </button>
+      </div>
 
       {/* Real-time stats */}
       <div className="dm-popup-stats-grid grid grid-cols-3 gap-2 text-center">

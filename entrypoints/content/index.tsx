@@ -3,7 +3,7 @@ import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { SlideOutPanel } from '../../components/SlideOutPanel';
-import { CapturedRequest, LatencyRule } from '../../utils/types';
+import { CapturedRequest, DockSide, LatencyRule } from '../../utils/types';
 import { domChaos } from '../../utils/dom-chaos';
 import './style.css';
 
@@ -98,6 +98,7 @@ export default defineContentScript({
 
 const ContentApp: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dockSide, setDockSide] = useState<DockSide>('right');
   const [requests, setRequests] = useState<CapturedRequest[]>([]);
   const [rules, setRules] = useState<LatencyRule[]>(DEFAULT_RULES);
   const [isRecording, setIsRecording] = useState(true);
@@ -134,11 +135,11 @@ const ContentApp: React.FC = () => {
     }
   };
 
-  // Load persisted latency rules from Chrome storage safely and ensure uniqueness
+  // Load persisted latency rules, open state, and dock side from Chrome storage
   useEffect(() => {
     if (!isExtensionValid()) return;
     try {
-      chrome.storage.local.get(['chaos_latency_rules', 'chaos_panel_open'], (res) => {
+      chrome.storage.local.get(['chaos_latency_rules', 'chaos_panel_open', 'chaos_panel_dock'], (res) => {
         if (!isExtensionValid()) return;
         if (res?.chaos_latency_rules && Array.isArray(res.chaos_latency_rules)) {
           const uniqueRules = deduplicateRules(res.chaos_latency_rules);
@@ -155,9 +156,38 @@ const ContentApp: React.FC = () => {
         if (typeof res?.chaos_panel_open === 'boolean') {
           setIsOpen(res.chaos_panel_open);
         }
+        if (res?.chaos_panel_dock === 'left' || res?.chaos_panel_dock === 'right') {
+          setDockSide(res.chaos_panel_dock);
+        }
       });
     } catch {
       // Ignore context invalidation
+    }
+
+    const handleStorageChange = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string
+    ) => {
+      if (areaName !== 'local') return;
+      const nextDock = changes.chaos_panel_dock?.newValue;
+      if (nextDock === 'left' || nextDock === 'right') {
+        setDockSide(nextDock);
+      }
+    };
+
+    try {
+      chrome.storage.onChanged.addListener(handleStorageChange);
+      return () => {
+        try {
+          if (isExtensionValid()) {
+            chrome.storage.onChanged.removeListener(handleStorageChange);
+          }
+        } catch {
+          // Ignore
+        }
+      };
+    } catch {
+      // Ignore
     }
   }, []);
 
@@ -183,6 +213,12 @@ const ContentApp: React.FC = () => {
     const next = !isOpen;
     setIsOpen(next);
     safeStorageSet({ chaos_panel_open: next });
+  };
+
+  const handleToggleDockSide = () => {
+    const next: DockSide = dockSide === 'right' ? 'left' : 'right';
+    setDockSide(next);
+    safeStorageSet({ chaos_panel_dock: next });
   };
 
   const handleCapturedRequest = useCallback((requestData: CapturedRequest) => {
@@ -266,6 +302,7 @@ const ContentApp: React.FC = () => {
           activeRulesCount: rules.filter((r) => r.enabled).length,
           domStats: domChaos.getModifiedCounts(),
           isOpen,
+          dockSide,
         });
         return true;
       }
@@ -285,7 +322,7 @@ const ContentApp: React.FC = () => {
     } catch {
       // Ignore
     }
-  }, [isOpen, requests.length, rules]);
+  }, [isOpen, dockSide, requests.length, rules]);
 
   // Replay request via MAIN world bridge so it executes in the page context and triggers the fetch hook
   const handleReplayRequest = useCallback((req: CapturedRequest) => {
@@ -323,6 +360,8 @@ const ContentApp: React.FC = () => {
         onReplayRequest={handleReplayRequest}
         isOpen={isOpen}
         onToggleOpen={handleToggleOpen}
+        dockSide={dockSide}
+        onToggleDockSide={handleToggleDockSide}
       />
     </div>
   );
