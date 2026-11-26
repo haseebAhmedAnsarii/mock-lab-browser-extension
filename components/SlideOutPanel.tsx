@@ -82,7 +82,7 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
     <>
       {/* Toast Notification Banner (Solid, No Gradient) */}
       {toastMessage && (
-        <div className="dm-panel-toast fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000000] px-4 py-2 bg-app-surface text-app-text text-xs font-sans rounded-md shadow-lg border border-app-border flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
+        <div className="dm-panel-toast pointer-events-auto fixed bottom-6 left-1/2 -translate-x-1/2 z-[10000000] px-4 py-2 bg-app-surface text-app-text text-xs font-sans rounded-md shadow-lg border border-app-border flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
           <Sparkles className="dm-panel-toast-icon w-3.5 h-3.5 text-app-warning shrink-0" />
           <span className="dm-panel-toast-text">{toastMessage}</span>
         </div>
@@ -92,7 +92,7 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
       {!isOpen && (
         <button
           onClick={onToggleOpen}
-          className={`dm-panel-dock-btn fixed bottom-6 z-[9999999] flex items-center gap-2.5 px-3.5 py-2.5 bg-app-bg hover:bg-app-surface text-app-text rounded-lg shadow-xl border border-app-border transition-all hover:border-app-border-focus font-sans ${
+          className={`dm-panel-dock-btn pointer-events-auto fixed bottom-6 z-[9999999] flex items-center gap-2.5 px-3.5 py-2.5 bg-app-bg hover:bg-app-surface text-app-text rounded-lg shadow-xl border border-app-border transition-all hover:border-app-border-focus font-sans ${
             dockSide === 'left' ? 'left-6' : 'right-6'
           }`}
           title="Open Dev Mock & Chaos Testing Palette | APITrace"
@@ -122,7 +122,7 @@ export const SlideOutPanel: React.FC<SlideOutPanelProps> = ({
       {/* Slide-Out Drawer Panel (Flat, Solid Architecture) */}
       {isOpen && (
         <div
-          className={`dm-panel-root fixed top-0 h-full z-[9999999] bg-app-bg text-app-text shadow-2xl border-app-border flex flex-col font-sans transition-[width] duration-150 ${
+          className={`dm-panel-root pointer-events-auto fixed top-0 h-full z-[9999999] bg-app-bg text-app-text shadow-2xl border-app-border flex flex-col font-sans transition-[width] duration-150 ${
             dockSide === 'left' ? 'left-0 border-r' : 'right-0 border-l'
           } ${
             isFullWidth ? 'w-full sm:w-[94vw]' : 'w-full sm:w-[680px]'

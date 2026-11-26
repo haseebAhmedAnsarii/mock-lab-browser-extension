@@ -16,6 +16,13 @@
   box-sizing: border-box;
 }
 
+/* Guarantee form controls inside Shadow DOM remain interactive and selectable */
+input, textarea, select {
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 /* Custom modern scrollbars across the entire extension UI - no browser default arrows */
 ::-webkit-scrollbar,
 div::-webkit-scrollbar {

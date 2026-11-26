@@ -82,7 +82,31 @@ export default defineContentScript({
       position: 'overlay',
       anchor: 'body',
       append: 'last',
-      onMount: (uiContainer, shadowRoot) => {
+      zIndex: 2147483647,
+      isolateEvents: [
+        'keydown',
+        'keyup',
+        'keypress',
+        'focusin',
+        'focusout',
+        'beforeinput',
+        'input',
+        'compositionstart',
+        'compositionupdate',
+        'compositionend',
+        'paste',
+        'cut',
+        'copy',
+        'mousedown',
+        'pointerdown',
+        'mouseup',
+        'pointerup',
+        'click',
+      ],
+      onMount: (uiContainer, _shadowRoot, shadowHost) => {
+        shadowHost.style.pointerEvents = 'auto';
+        shadowHost.style.isolation = 'isolate';
+        uiContainer.style.pointerEvents = 'auto';
         const root = ReactDOM.createRoot(uiContainer);
         root.render(<ContentApp />);
         return root;
@@ -107,6 +131,12 @@ const ContentApp: React.FC = () => {
   rulesRef.current = rules;
   const isRecordingRef = useRef(isRecording);
   isRecordingRef.current = isRecording;
+  const isOpenRef = useRef(isOpen);
+  isOpenRef.current = isOpen;
+  const dockSideRef = useRef(dockSide);
+  dockSideRef.current = dockSide;
+  const requestsCountRef = useRef(requests.length);
+  requestsCountRef.current = requests.length;
 
   const broadcastConfig = (currentRules: LatencyRule[], recording: boolean) => {
     try {
@@ -234,8 +264,8 @@ const ContentApp: React.FC = () => {
       return [requestData, ...prev.slice(0, 499)];
     });
 
-    // Update background badge safely
-    safeSendMessage({ type: 'REQUEST_CAPTURED', request: requestData });
+    // Update background badge safely without serializing large bodies over IPC
+    safeSendMessage({ type: 'REQUEST_CAPTURED' });
   }, []);
 
   // Listen to intercepted API traffic and ready signals from injected script
@@ -266,8 +296,10 @@ const ContentApp: React.FC = () => {
       if (!isExtensionValid()) return false;
 
       if (msg.type === 'TOGGLE_PANEL') {
-        handleToggleOpen();
-        sendResponse({ success: true, isOpen: !isOpen });
+        const next = !isOpenRef.current;
+        setIsOpen(next);
+        safeStorageSet({ chaos_panel_open: next });
+        sendResponse({ success: true, isOpen: next });
         return true;
       }
 
@@ -298,11 +330,11 @@ const ContentApp: React.FC = () => {
 
       if (msg.type === 'GET_PAGE_STATS') {
         sendResponse({
-          requestCount: requests.length,
-          activeRulesCount: rules.filter((r) => r.enabled).length,
+          requestCount: requestsCountRef.current,
+          activeRulesCount: rulesRef.current.filter((r) => r.enabled).length,
           domStats: domChaos.getModifiedCounts(),
-          isOpen,
-          dockSide,
+          isOpen: isOpenRef.current,
+          dockSide: dockSideRef.current,
         });
         return true;
       }
@@ -322,7 +354,7 @@ const ContentApp: React.FC = () => {
     } catch {
       // Ignore
     }
-  }, [isOpen, dockSide, requests.length, rules]);
+  }, []);
 
   // Replay request via MAIN world bridge so it executes in the page context and triggers the fetch hook
   const handleReplayRequest = useCallback((req: CapturedRequest) => {

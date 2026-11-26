@@ -17,6 +17,23 @@ interface LatencyThrottleTabProps {
   onNotify?: (message: string) => void;
 }
 
+const MAX_LIVE_JSON_CHECK_BYTES = 200_000;
+
+/** Displays inline JSON syntax validity without blocking keystrokes on oversized payloads. */
+function renderJsonValidityBadge(raw: string): React.ReactNode {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (trimmed.length > MAX_LIVE_JSON_CHECK_BYTES) {
+    return <span className="text-[10px] text-app-muted font-mono">large payload</span>;
+  }
+  try {
+    JSON.parse(trimmed);
+    return <span className="text-[10px] text-app-success font-mono">✓ valid JSON</span>;
+  } catch {
+    return <span className="text-[10px] text-app-danger font-mono">✗ invalid JSON</span>;
+  }
+}
+
 export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
   rules,
   onUpdateRules,
@@ -60,7 +77,10 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
 
   const handleSaveEdit = (id: string) => {
     const trimmedPattern = editPattern.trim();
-    if (!trimmedPattern) return;
+    if (!trimmedPattern) {
+      setEditPatternError('URL pattern is required.');
+      return;
+    }
 
     const duplicate = rules.find(
       (r) => r.id !== id && r.urlPattern.trim().toLowerCase() === trimmedPattern.toLowerCase()
@@ -389,10 +409,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                   Custom Mock Response Body{' '}
                   <span className="text-app-faint font-normal">(JSON — optional)</span>
                 </label>
-                {newMockBody.trim() && (() => {
-                  try { JSON.parse(newMockBody); return <span className="text-[10px] text-app-success font-mono">✓ valid JSON</span>; }
-                  catch { return <span className="text-[10px] text-app-danger font-mono">✗ invalid JSON</span>; }
-                })()}
+                {renderJsonValidityBadge(newMockBody)}
               </div>
               <textarea
                 rows={4}
@@ -623,10 +640,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                           Custom Mock Body{' '}
                           <span className="text-app-faint font-normal">(JSON — optional)</span>
                         </label>
-                        {editMockBody.trim() && (() => {
-                          try { JSON.parse(editMockBody); return <span className="text-[10px] text-app-success font-mono">✓ valid JSON</span>; }
-                          catch { return <span className="text-[10px] text-app-danger font-mono">✗ invalid JSON</span>; }
-                        })()}
+                        {renderJsonValidityBadge(editMockBody)}
                       </div>
                       <textarea
                         rows={4}
