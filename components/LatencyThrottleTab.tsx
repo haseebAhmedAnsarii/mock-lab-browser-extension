@@ -30,12 +30,15 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
   const [showAddForm, setShowAddForm] = useState(false);
   const [deletingRuleId, setDeletingRuleId] = useState<string | null>(null);
 
+  const [newMockBody, setNewMockBody] = useState('');
+
   // Edit state
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editPattern, setEditPattern] = useState('');
   const [editDelay, setEditDelay] = useState(0);
   const [editMockStatus, setEditMockStatus] = useState<number>(0);
+  const [editMockBody, setEditMockBody] = useState('');
   const [editPatternError, setEditPatternError] = useState('');
 
   const startEdit = (rule: LatencyRule) => {
@@ -44,12 +47,14 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
     setEditPattern(rule.urlPattern);
     setEditDelay(rule.delayMs);
     setEditMockStatus(rule.mockStatus ?? 0);
+    setEditMockBody(rule.mockBody ?? '');
     setEditPatternError('');
     setDeletingRuleId(null);
   };
 
   const cancelEdit = () => {
     setEditingRuleId(null);
+    setEditMockBody('');
     setEditPatternError('');
   };
 
@@ -73,6 +78,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
             urlPattern: trimmedPattern,
             delayMs: Number(editDelay) || 0,
             mockStatus: editMockStatus > 0 ? editMockStatus : undefined,
+            mockBody: editMockBody.trim() || undefined,
           }
         : r
     );
@@ -117,6 +123,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
       delayMs: Number(newDelay) || 0,
       enabled: true,
       mockStatus: newMockStatus > 0 ? newMockStatus : undefined,
+      mockBody: newMockBody.trim() || undefined,
     };
 
     const next = [...rules, newRule];
@@ -128,6 +135,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
     setPatternError('');
     setNewDelay(1500);
     setNewMockStatus(0);
+    setNewMockBody('');
     setShowAddForm(false);
   };
 
@@ -373,6 +381,33 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
             </div>
           </div>
 
+          {/* Mock Response Body — only shown when mock status is active */}
+          {newMockStatus > 0 && (
+            <div className="dm-latency-mock-body-field">
+              <div className="flex items-center justify-between mb-1">
+                <label className="dm-latency-mock-body-label text-[11px] font-semibold text-app-muted">
+                  Custom Mock Response Body{' '}
+                  <span className="text-app-faint font-normal">(JSON — optional)</span>
+                </label>
+                {newMockBody.trim() && (() => {
+                  try { JSON.parse(newMockBody); return <span className="text-[10px] text-app-success font-mono">✓ valid JSON</span>; }
+                  catch { return <span className="text-[10px] text-app-danger font-mono">✗ invalid JSON</span>; }
+                })()}
+              </div>
+              <textarea
+                rows={4}
+                value={newMockBody}
+                onChange={(e) => setNewMockBody(e.target.value)}
+                placeholder={'{\n  "error": "...",\n  "code": 500\n}'}
+                spellCheck={false}
+                className="dm-latency-mock-body-input w-full px-3 py-2 text-xs bg-app-bg border border-app-border rounded text-app-text font-mono focus:outline-none focus:border-app-border-focus resize-y"
+              />
+              <p className="text-[10px] text-app-muted mt-1">
+                Leave empty to use default synthetic body. Paste your real API's error JSON to match your site's error handling.
+              </p>
+            </div>
+          )}
+
           <button
             type="submit"
             className="dm-latency-save-btn w-full py-2 bg-app-primary hover:bg-app-primary-hover font-semibold text-xs text-white rounded transition-colors"
@@ -434,6 +469,14 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                         {rule.mockStatus && (
                           <span className="dm-latency-mock-badge px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-danger-muted text-app-danger border border-app-danger/40">
                             {rule.mockStatus} MOCK
+                          </span>
+                        )}
+                        {rule.mockBody && (
+                          <span
+                            className="dm-latency-mockbody-badge px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-app-elevated text-app-muted border border-app-border"
+                            title={rule.mockBody}
+                          >
+                            custom body
                           </span>
                         )}
                       </div>
@@ -571,6 +614,33 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                       </select>
                     </div>
                   </div>
+
+                  {/* Mock Response Body (edit) */}
+                  {editMockStatus > 0 && (
+                    <div className="dm-latency-mock-body-field">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-semibold text-app-muted">
+                          Custom Mock Body{' '}
+                          <span className="text-app-faint font-normal">(JSON — optional)</span>
+                        </label>
+                        {editMockBody.trim() && (() => {
+                          try { JSON.parse(editMockBody); return <span className="text-[10px] text-app-success font-mono">✓ valid JSON</span>; }
+                          catch { return <span className="text-[10px] text-app-danger font-mono">✗ invalid JSON</span>; }
+                        })()}
+                      </div>
+                      <textarea
+                        rows={4}
+                        value={editMockBody}
+                        onChange={(e) => setEditMockBody(e.target.value)}
+                        placeholder={'{\n  "error": "...",\n  "code": 500\n}'}
+                        spellCheck={false}
+                        className="w-full px-3 py-2 text-xs bg-app-bg border border-app-border rounded text-app-text font-mono focus:outline-none focus:border-app-border-focus resize-y"
+                      />
+                      <p className="text-[10px] text-app-muted mt-1">
+                        Leave empty to use default synthetic body.
+                      </p>
+                    </div>
+                  )}
 
                   {/* Save / Cancel */}
                   <div className="flex items-center gap-2 pt-0.5">

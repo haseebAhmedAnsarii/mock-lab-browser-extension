@@ -642,17 +642,20 @@ export default defineContentScript({
           if (effectiveMockStatus) {
             const delayMs = matchingRule?.delayMs || 0;
             setTimeout(() => {
-              const mockBody = JSON.stringify({
-                message: `Synthetic chaos response ${effectiveMockStatus}`,
-                rule: matchingRule?.name,
-                status: effectiveMockStatus,
-              });
+              const mockBody =
+                matchingRule?.mockBody ||
+                JSON.stringify({
+                  message: `Synthetic chaos response ${effectiveMockStatus}`,
+                  rule: matchingRule?.name,
+                  status: effectiveMockStatus,
+                });
+              const parsedBody = (() => { try { return JSON.parse(mockBody); } catch { return mockBody; } })();
 
               // Synthesise virtual state without hitting the network
               virtualReadyState = 4;
               virtualStatus = effectiveMockStatus;
               virtualStatusText = `Chaos Mock ${effectiveMockStatus}`;
-              virtualResponse = mockBody;
+              virtualResponse = parsedBody;
               virtualResponseText = mockBody;
               virtualResponseURL = typeof trace?.url === 'string' ? trace.url : '';
 
