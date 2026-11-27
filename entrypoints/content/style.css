@@ -23,6 +23,20 @@ input, textarea, select {
   -webkit-user-select: text;
 }
 
+/* Hide increment/decrement spinner arrows on custom HTTP status number input */
+.dm-latency-custom-status-input::-webkit-inner-spin-button,
+.dm-latency-custom-status-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  display: none;
+}
+
+.dm-latency-custom-status-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Custom modern scrollbars across the entire extension UI - no browser default arrows */
 ::-webkit-scrollbar,
 div::-webkit-scrollbar {

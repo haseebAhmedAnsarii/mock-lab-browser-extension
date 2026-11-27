@@ -18,6 +18,92 @@ interface LatencyThrottleTabProps {
 }
 
 const MAX_LIVE_JSON_CHECK_BYTES = 200_000;
+const CUSTOM_STATUS_OPTION = -1;
+const NULL_BODY_STATUSES = new Set([204, 205, 304]);
+
+const MOCK_STATUS_OPTIONS = [
+  { value: 0, label: 'Pass through (Real response)' },
+  { value: 200, label: '200 OK (Success Mock)' },
+  { value: 201, label: '201 Created' },
+  { value: 204, label: '204 No Content' },
+  { value: 400, label: '400 Bad Request' },
+  { value: 401, label: '401 Unauthorized' },
+  { value: 403, label: '403 Forbidden' },
+  { value: 404, label: '404 Not Found' },
+  { value: 422, label: '422 Unprocessable Entity' },
+  { value: 429, label: '429 Too Many Requests' },
+  { value: 500, label: '500 Internal Server Error' },
+  { value: 502, label: '502 Bad Gateway' },
+  { value: 503, label: '503 Service Unavailable' },
+  { value: 504, label: '504 Gateway Timeout' },
+] as const;
+
+const PRESET_STATUS_VALUES = new Set<number>(MOCK_STATUS_OPTIONS.map((opt) => opt.value));
+
+interface MockStatusDraft {
+  status: number;
+  isCustom: boolean;
+  customInput: string;
+  error: string;
+}
+
+const DEFAULT_MOCK_STATUS_DRAFT: MockStatusDraft = {
+  status: 0,
+  isCustom: false,
+  customInput: '',
+  error: '',
+};
+
+function isValidHttpMockStatus(code: number): boolean {
+  return Number.isInteger(code) && code >= 200 && code <= 599;
+}
+
+function createDraftFromStatus(mockStatus?: number): MockStatusDraft {
+  if (!mockStatus || mockStatus <= 0) {
+    return { ...DEFAULT_MOCK_STATUS_DRAFT };
+  }
+  if (PRESET_STATUS_VALUES.has(mockStatus)) {
+    return { status: mockStatus, isCustom: false, customInput: '', error: '' };
+  }
+  return {
+    status: mockStatus,
+    isCustom: true,
+    customInput: String(mockStatus),
+    error: '',
+  };
+}
+
+function validateAndResolveMockStatus(
+  draft: MockStatusDraft,
+  setDraft: React.Dispatch<React.SetStateAction<MockStatusDraft>>
+): { ok: true; mockStatus?: number } | { ok: false } {
+  if (!draft.isCustom) {
+    return { ok: true, mockStatus: draft.status > 0 ? draft.status : undefined };
+  }
+  const trimmed = draft.customInput.trim();
+  const parsed = Number(trimmed);
+  if (!trimmed || !isValidHttpMockStatus(parsed)) {
+    setDraft((prev) => ({
+      ...prev,
+      error: 'Enter an HTTP status between 200 and 599.',
+    }));
+    return { ok: false };
+  }
+  return { ok: true, mockStatus: parsed };
+}
+
+function getMockBadgeClasses(status: number): string {
+  if (status >= 200 && status < 300) {
+    return 'bg-app-success-muted text-app-success border-app-success/40';
+  }
+  if (status >= 300 && status < 400) {
+    return 'bg-app-elevated text-app-accent border-app-border';
+  }
+  if (status >= 400 && status < 500) {
+    return 'bg-app-warning-muted text-app-warning border-app-warning/40';
+  }
+  return 'bg-app-danger-muted text-app-danger border-app-danger/40';
+}
 
 /** Displays inline JSON syntax validity without blocking keystrokes on oversized payloads. */
 function renderJsonValidityBadge(raw: string): React.ReactNode {
@@ -34,6 +120,143 @@ function renderJsonValidityBadge(raw: string): React.ReactNode {
   }
 }
 
+interface MockStatusSelectorProps {
+  label: string;
+  draft: MockStatusDraft;
+  onChange: (next: MockStatusDraft) => void;
+  selectClassName?: string;
+}
+
+const MockStatusSelector: React.FC<MockStatusSelectorProps> = ({
+  label,
+  draft,
+  onChange,
+  selectClassName = '',
+}) => {
+  const selectValue = draft.isCustom ? CUSTOM_STATUS_OPTION : draft.status;
+
+  const handleSelectChange = (rawVal: string) => {
+    const val = Number(rawVal);
+    if (val === CUSTOM_STATUS_OPTION) {
+      onChange({
+        status: draft.status > 0 ? draft.status : 0,
+        isCustom: true,
+        customInput: draft.status > 0 ? String(draft.status) : '',
+        error: '',
+      });
+      return;
+    }
+    onChange({ status: val, isCustom: false, customInput: '', error: '' });
+  };
+
+  const handleCustomInputChange = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      onChange({ ...draft, status: 0, customInput: raw, error: '' });
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (isValidHttpMockStatus(parsed)) {
+      onChange({ ...draft, status: parsed, customInput: raw, error: '' });
+    } else {
+      onChange({ ...draft, status: 0, customInput: raw, error: 'Must be 200–599' });
+    }
+  };
+
+  return (
+    <div>
+      <label className="dm-latency-mock-status-label text-[11px] font-semibold text-app-muted block mb-1">
+        {label}
+      </label>
+      <select
+        value={selectValue}
+        onChange={(e) => handleSelectChange(e.target.value)}
+        className={`w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus ${selectClassName}`}
+      >
+        {MOCK_STATUS_OPTIONS.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+        <option value={CUSTOM_STATUS_OPTION}>Custom status code (200–599)...</option>
+      </select>
+
+      {draft.isCustom && (
+        <div className="mt-1.5 space-y-1">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min={200}
+              max={599}
+              step={1}
+              autoFocus
+              value={draft.customInput}
+              onChange={(e) => handleCustomInputChange(e.target.value)}
+              placeholder="e.g. 200, 202, 409, 503"
+              className={`dm-latency-custom-status-input w-40 px-2.5 py-1 text-xs bg-app-bg border rounded text-app-text font-mono focus:outline-none ${
+                draft.error
+                  ? 'border-app-danger focus:border-app-danger'
+                  : 'border-app-border focus:border-app-border-focus'
+              }`}
+            />
+            <span className="text-[10px] text-app-muted">Valid range: 200–599</span>
+          </div>
+          {draft.error && (
+            <p className="text-[11px] text-app-danger font-medium">⚠️ {draft.error}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface MockBodyFieldProps {
+  status: number;
+  value: string;
+  onChange: (value: string) => void;
+  label?: string;
+}
+
+const MockBodyField: React.FC<MockBodyFieldProps> = ({
+  status,
+  value,
+  onChange,
+  label = 'Custom Mock Response Body',
+}) => {
+  if (status <= 0) return null;
+
+  if (NULL_BODY_STATUSES.has(status)) {
+    return (
+      <div className="dm-latency-mock-body-note px-3 py-2 bg-app-bg border border-app-border rounded text-[11px] text-app-muted">
+        HTTP <span className="font-mono font-bold text-app-text">{status}</span> responses have an empty body by HTTP specification.
+      </div>
+    );
+  }
+
+  return (
+    <div className="dm-latency-mock-body-field">
+      <div className="flex items-center justify-between mb-1">
+        <label className="dm-latency-mock-body-label text-[11px] font-semibold text-app-muted">
+          {label}{' '}
+          <span className="text-app-faint font-normal">(JSON — optional)</span>
+        </label>
+        {renderJsonValidityBadge(value)}
+      </div>
+      <textarea
+        rows={4}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={'{\n  "message": "Mocked response",\n  "status": ' + status + '\n}'}
+        spellCheck={false}
+        className="dm-latency-mock-body-input w-full px-3 py-2 text-xs bg-app-bg border border-app-border rounded text-app-text font-mono focus:outline-none focus:border-app-border-focus resize-y"
+      />
+      <p className="text-[10px] text-app-muted mt-1">
+        Leave empty to use default synthetic body. Paste JSON matching your API&apos;s response structure.
+      </p>
+    </div>
+  );
+};
+
 export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
   rules,
   onUpdateRules,
@@ -43,7 +266,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
   const [newPattern, setNewPattern] = useState('');
   const [patternError, setPatternError] = useState('');
   const [newDelay, setNewDelay] = useState(1500);
-  const [newMockStatus, setNewMockStatus] = useState<number>(0);
+  const [newStatusDraft, setNewStatusDraft] = useState<MockStatusDraft>(DEFAULT_MOCK_STATUS_DRAFT);
   const [showAddForm, setShowAddForm] = useState(false);
   const [deletingRuleId, setDeletingRuleId] = useState<string | null>(null);
 
@@ -54,7 +277,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
   const [editName, setEditName] = useState('');
   const [editPattern, setEditPattern] = useState('');
   const [editDelay, setEditDelay] = useState(0);
-  const [editMockStatus, setEditMockStatus] = useState<number>(0);
+  const [editStatusDraft, setEditStatusDraft] = useState<MockStatusDraft>(DEFAULT_MOCK_STATUS_DRAFT);
   const [editMockBody, setEditMockBody] = useState('');
   const [editPatternError, setEditPatternError] = useState('');
 
@@ -63,7 +286,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
     setEditName(rule.name);
     setEditPattern(rule.urlPattern);
     setEditDelay(rule.delayMs);
-    setEditMockStatus(rule.mockStatus ?? 0);
+    setEditStatusDraft(createDraftFromStatus(rule.mockStatus));
     setEditMockBody(rule.mockBody ?? '');
     setEditPatternError('');
     setDeletingRuleId(null);
@@ -71,6 +294,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
 
   const cancelEdit = () => {
     setEditingRuleId(null);
+    setEditStatusDraft({ ...DEFAULT_MOCK_STATUS_DRAFT });
     setEditMockBody('');
     setEditPatternError('');
   };
@@ -90,6 +314,15 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
       return;
     }
 
+    const statusResult = validateAndResolveMockStatus(editStatusDraft, setEditStatusDraft);
+    if (!statusResult.ok) return;
+
+    const resolvedStatus = statusResult.mockStatus;
+    const resolvedBody =
+      resolvedStatus && !NULL_BODY_STATUSES.has(resolvedStatus)
+        ? editMockBody.trim() || undefined
+        : undefined;
+
     const next = rules.map((r) =>
       r.id === id
         ? {
@@ -97,14 +330,15 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
             name: editName.trim() || `Throttle ${trimmedPattern}`,
             urlPattern: trimmedPattern,
             delayMs: Number(editDelay) || 0,
-            mockStatus: editMockStatus > 0 ? editMockStatus : undefined,
-            mockBody: editMockBody.trim() || undefined,
+            mockStatus: resolvedStatus,
+            mockBody: resolvedBody,
           }
         : r
     );
     onUpdateRules(next);
     onNotify?.(`Rule updated: ${editName.trim() || trimmedPattern}`);
     setEditingRuleId(null);
+    setEditStatusDraft({ ...DEFAULT_MOCK_STATUS_DRAFT });
     setEditPatternError('');
   };
 
@@ -136,14 +370,23 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
       return;
     }
 
+    const statusResult = validateAndResolveMockStatus(newStatusDraft, setNewStatusDraft);
+    if (!statusResult.ok) return;
+
+    const resolvedStatus = statusResult.mockStatus;
+    const resolvedBody =
+      resolvedStatus && !NULL_BODY_STATUSES.has(resolvedStatus)
+        ? newMockBody.trim() || undefined
+        : undefined;
+
     const newRule: LatencyRule = {
       id: 'rule_' + Math.random().toString(36).substring(2, 9),
       name: newRuleName.trim() || `Throttle ${trimmedPattern}`,
       urlPattern: trimmedPattern,
       delayMs: Number(newDelay) || 0,
       enabled: true,
-      mockStatus: newMockStatus > 0 ? newMockStatus : undefined,
-      mockBody: newMockBody.trim() || undefined,
+      mockStatus: resolvedStatus,
+      mockBody: resolvedBody,
     };
 
     const next = [...rules, newRule];
@@ -154,7 +397,7 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
     setNewPattern('');
     setPatternError('');
     setNewDelay(1500);
-    setNewMockStatus(0);
+    setNewStatusDraft({ ...DEFAULT_MOCK_STATUS_DRAFT });
     setNewMockBody('');
     setShowAddForm(false);
   };
@@ -380,50 +623,21 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
             </div>
 
             <div className="dm-latency-mock-status-field">
-              <label className="dm-latency-mock-status-label text-[11px] font-semibold text-app-muted block mb-1">
-                Synthetic Mock Status (Optional)
-              </label>
-              <select
-                value={newMockStatus}
-                onChange={(e) => setNewMockStatus(Number(e.target.value))}
-                className="dm-latency-mock-status-select w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus"
-              >
-                <option value={0}>Pass through (Real response)</option>
-                <option value={400}>400 Bad Request</option>
-                <option value={401}>401 Unauthorized</option>
-                <option value={403}>403 Forbidden</option>
-                <option value={404}>404 Not Found</option>
-                <option value={429}>429 Too Many Requests</option>
-                <option value={500}>500 Internal Server Error</option>
-                <option value={502}>502 Bad Gateway</option>
-                <option value={504}>504 Gateway Timeout</option>
-              </select>
+              <MockStatusSelector
+                label="Synthetic Mock Status (Optional)"
+                draft={newStatusDraft}
+                onChange={setNewStatusDraft}
+                selectClassName="dm-latency-mock-status-select"
+              />
             </div>
           </div>
 
           {/* Mock Response Body — only shown when mock status is active */}
-          {newMockStatus > 0 && (
-            <div className="dm-latency-mock-body-field">
-              <div className="flex items-center justify-between mb-1">
-                <label className="dm-latency-mock-body-label text-[11px] font-semibold text-app-muted">
-                  Custom Mock Response Body{' '}
-                  <span className="text-app-faint font-normal">(JSON — optional)</span>
-                </label>
-                {renderJsonValidityBadge(newMockBody)}
-              </div>
-              <textarea
-                rows={4}
-                value={newMockBody}
-                onChange={(e) => setNewMockBody(e.target.value)}
-                placeholder={'{\n  "error": "...",\n  "code": 500\n}'}
-                spellCheck={false}
-                className="dm-latency-mock-body-input w-full px-3 py-2 text-xs bg-app-bg border border-app-border rounded text-app-text font-mono focus:outline-none focus:border-app-border-focus resize-y"
-              />
-              <p className="text-[10px] text-app-muted mt-1">
-                Leave empty to use default synthetic body. Paste your real API's error JSON to match your site's error handling.
-              </p>
-            </div>
-          )}
+          <MockBodyField
+            status={newStatusDraft.status}
+            value={newMockBody}
+            onChange={setNewMockBody}
+          />
 
           <button
             type="submit"
@@ -484,7 +698,11 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                           +{rule.delayMs}ms
                         </span>
                         {rule.mockStatus && (
-                          <span className="dm-latency-mock-badge px-2 py-0.2 rounded text-[10px] font-mono font-bold bg-app-danger-muted text-app-danger border border-app-danger/40">
+                          <span
+                            className={`dm-latency-mock-badge px-2 py-0.2 rounded text-[10px] font-mono font-bold border ${getMockBadgeClasses(
+                              rule.mockStatus
+                            )}`}
+                          >
                             {rule.mockStatus} MOCK
                           </span>
                         )}
@@ -613,48 +831,21 @@ export const LatencyThrottleTab: React.FC<LatencyThrottleTabProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] font-semibold text-app-muted block mb-1">Mock Status</label>
-                      <select
-                        value={editMockStatus}
-                        onChange={(e) => setEditMockStatus(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 text-xs bg-app-bg border border-app-border rounded text-app-text focus:outline-none focus:border-app-border-focus"
-                      >
-                        <option value={0}>Pass through (Real response)</option>
-                        <option value={400}>400 Bad Request</option>
-                        <option value={401}>401 Unauthorized</option>
-                        <option value={403}>403 Forbidden</option>
-                        <option value={404}>404 Not Found</option>
-                        <option value={429}>429 Too Many Requests</option>
-                        <option value={500}>500 Internal Server Error</option>
-                        <option value={502}>502 Bad Gateway</option>
-                        <option value={504}>504 Gateway Timeout</option>
-                      </select>
+                      <MockStatusSelector
+                        label="Mock Status"
+                        draft={editStatusDraft}
+                        onChange={setEditStatusDraft}
+                      />
                     </div>
                   </div>
 
                   {/* Mock Response Body (edit) */}
-                  {editMockStatus > 0 && (
-                    <div className="dm-latency-mock-body-field">
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-[11px] font-semibold text-app-muted">
-                          Custom Mock Body{' '}
-                          <span className="text-app-faint font-normal">(JSON — optional)</span>
-                        </label>
-                        {renderJsonValidityBadge(editMockBody)}
-                      </div>
-                      <textarea
-                        rows={4}
-                        value={editMockBody}
-                        onChange={(e) => setEditMockBody(e.target.value)}
-                        placeholder={'{\n  "error": "...",\n  "code": 500\n}'}
-                        spellCheck={false}
-                        className="w-full px-3 py-2 text-xs bg-app-bg border border-app-border rounded text-app-text font-mono focus:outline-none focus:border-app-border-focus resize-y"
-                      />
-                      <p className="text-[10px] text-app-muted mt-1">
-                        Leave empty to use default synthetic body.
-                      </p>
-                    </div>
-                  )}
+                  <MockBodyField
+                    status={editStatusDraft.status}
+                    value={editMockBody}
+                    onChange={setEditMockBody}
+                    label="Custom Mock Body"
+                  />
 
                   {/* Save / Cancel */}
                   <div className="flex items-center gap-2 pt-0.5">

@@ -60,6 +60,23 @@ export default defineContentScript({
     // Announce to the content script that the injected interceptor is ready
     window.postMessage({ source: 'DEV_MOCK_INJECTED', type: 'READY' }, '*');
 
+    const NULL_BODY_STATUSES = new Set([204, 205, 304]);
+
+    function clampMockStatus(status: number): number {
+      const normalized = Math.trunc(status);
+      return Math.min(599, Math.max(200, normalized));
+    }
+
+    function buildMockBody(rule: LatencyRule, status: number, flakyMessage?: string): string | null {
+      if (NULL_BODY_STATUSES.has(status)) return null;
+      if (rule.mockBody) return rule.mockBody;
+      return JSON.stringify({
+        message: flakyMessage || `Synthetic mock response ${status}`,
+        rule: rule.name,
+        status,
+      });
+    }
+
     function findMatchingRule(url: string): LatencyRule | undefined {
       return activeRules.find((rule) => {
         if (!rule.enabled || !rule.urlPattern) return false;
@@ -215,22 +232,19 @@ export default defineContentScript({
           matchingRule.failureRate && Math.random() * 100 < matchingRule.failureRate;
 
         // Mock Status Override (either explicitly set or triggered by flaky failure)
-        const effectiveMockStatus = shouldFailFlaky ? (matchingRule.mockStatus || 500) : matchingRule.mockStatus;
+        const rawMockStatus = shouldFailFlaky ? (matchingRule.mockStatus || 500) : matchingRule.mockStatus;
 
-        if (effectiveMockStatus && effectiveMockStatus > 0) {
+        if (rawMockStatus && rawMockStatus > 0) {
+          const effectiveMockStatus = clampMockStatus(rawMockStatus);
           if (matchingRule.delayMs > 0) {
             await new Promise((resolve) => setTimeout(resolve, matchingRule.delayMs));
           }
           const duration = Math.round(performance.now() - startTime);
-          const mockBody =
-            matchingRule.mockBody ||
-            JSON.stringify({
-              message: shouldFailFlaky
-                ? `Flaky network chaos failure (${matchingRule.failureRate}% rate)`
-                : `Synthetic chaos response ${effectiveMockStatus}`,
-              rule: matchingRule.name,
-              status: effectiveMockStatus,
-            });
+          const mockBody = buildMockBody(
+            matchingRule,
+            effectiveMockStatus,
+            shouldFailFlaky ? `Flaky network chaos failure (${matchingRule.failureRate}% rate)` : undefined
+          );
 
           const mockResponse = new Response(mockBody, {
             status: effectiveMockStatus,
@@ -255,7 +269,7 @@ export default defineContentScript({
             requestBody,
             responseHeaders: { 'content-type': 'application/json', 'x-chaos-mock': 'true' },
             responseBody: mockBody,
-            size: mockBody.length,
+            size: mockBody ? new Blob([mockBody]).size : 0,
             isSlow: duration > 500,
             wasThrottled,
             throttleDelayMs,
@@ -655,32 +669,32 @@ export default defineContentScript({
           }
 
           // ── Mock Status intercept (XHR) ──
-          const effectiveMockStatus =
+          const rawMockStatus =
             isMonitoringEnabled && matchingRule?.mockStatus && matchingRule.mockStatus > 0
               ? matchingRule.mockStatus
               : undefined;
 
-          if (effectiveMockStatus) {
+          if (rawMockStatus && matchingRule) {
+            const effectiveMockStatus = clampMockStatus(rawMockStatus);
+            const activeRule = matchingRule;
             isMocked = true;
             virtualReadyState = realXhr.readyState || 1;
-            const delayMs = matchingRule?.delayMs || 0;
+            const delayMs = activeRule.delayMs || 0;
             mockTimer = setTimeout(() => {
               mockTimer = null;
-              const mockBody =
-                matchingRule?.mockBody ||
-                JSON.stringify({
-                  message: `Synthetic chaos response ${effectiveMockStatus}`,
-                  rule: matchingRule?.name,
-                  status: effectiveMockStatus,
-                });
-              const parsedBody = (() => { try { return JSON.parse(mockBody); } catch { return mockBody; } })();
+              const mockBody = buildMockBody(activeRule, effectiveMockStatus);
+              const parsedBody = mockBody === null
+                ? null
+                : (() => { try { return JSON.parse(mockBody); } catch { return mockBody; } })();
 
               // Synthesise virtual state without hitting the network
               virtualReadyState = 4;
               virtualStatus = effectiveMockStatus;
               virtualStatusText = `Chaos Mock ${effectiveMockStatus}`;
-              virtualResponse = realXhr.responseType === 'json' ? parsedBody : mockBody;
-              virtualResponseText = mockBody;
+              virtualResponse = mockBody === null
+                ? (realXhr.responseType === 'json' ? null : '')
+                : (realXhr.responseType === 'json' ? parsedBody : mockBody);
+              virtualResponseText = mockBody ?? '';
               virtualResponseURL = typeof trace?.url === 'string' ? trace.url : '';
 
               emitTraceEvent({
@@ -697,8 +711,8 @@ export default defineContentScript({
                 requestBody: trace?.requestBody ?? null,
                 responseHeaders: { ...virtualHeaders },
                 responseBody: mockBody,
-                size: new Blob([mockBody]).size,
-                isSlow: (matchingRule?.delayMs ?? 0) > 500,
+                size: mockBody ? new Blob([mockBody]).size : 0,
+                isSlow: (activeRule.delayMs ?? 0) > 500,
                 wasThrottled: true,
                 throttleDelayMs: delayMs,
               });
